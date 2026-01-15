@@ -1,49 +1,18 @@
 /**
- * Machine-to-Machine (M2M) OAuth extension
+ * Machine-to-Machine (M2M) OAuth client
+ *
+ * Re-exports from the extensions module for backward compatibility.
+ * The main implementation is in src/extensions/oauth-m2m.ts
  */
 
-export interface M2MClientConfig {
-  clientId: string;
-  clientSecret: string;
-  tokenEndpoint: string;
-  scopes?: string[];
-}
-
-export interface M2MTokenResponse {
-  accessToken: string;
-  tokenType: 'Bearer';
-  expiresIn: number;
-  scope?: string;
-}
-
-export class M2MClient {
-  private tokenCache?: { token: string; expiresAt: number };
-  private readonly config: M2MClientConfig;
-
-  constructor(config: M2MClientConfig) {
-    this.config = config;
-  }
-
-  getConfig(): M2MClientConfig {
-    return this.config;
-  }
-
-  async getAccessToken(): Promise<string> {
-    if (this.tokenCache && Date.now() < this.tokenCache.expiresAt - 60000) {
-      return this.tokenCache.token;
-    }
-
-    const response = await this.requestToken();
-    this.tokenCache = {
-      token: response.accessToken,
-      expiresAt: Date.now() + response.expiresIn * 1000,
-    };
-
-    return response.accessToken;
-  }
-
-  private async requestToken(): Promise<M2MTokenResponse> {
-    // TODO: Implement client credentials grant
-    throw new Error('Not implemented');
-  }
-}
+// Re-export types and classes from the extension module
+export {
+  M2MClient,
+  M2MAuthError,
+  createM2MClient,
+  createAuth0M2MClient,
+  type M2MClientConfig,
+  type NormalizedM2MTokenResponse as M2MTokenResponse,
+  type OAuthM2MExtensionConfig,
+  type ClientAuthMethod,
+} from '../extensions/oauth-m2m.js';

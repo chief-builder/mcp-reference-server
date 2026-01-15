@@ -469,6 +469,7 @@ describe('Extension Framework', () => {
         expect(ext.settings).toEqual({
           grantTypes: ['client_credentials'],
           tokenEndpoint: 'https://auth.example.com/token',
+          authMethods: ['client_secret_basic', 'client_secret_post'],
         });
       });
 

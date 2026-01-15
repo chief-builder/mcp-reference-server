@@ -33,7 +33,7 @@ export * from './auth/oauth.js';
 export * from './auth/pkce.js';
 export * from './auth/discovery.js';
 export * from './auth/tokens.js';
-export * from './auth/m2m.js';
+// m2m.js re-exports from extensions/oauth-m2m.js - skip to avoid duplicate exports
 
 // Tools
 export * from './tools/registry.js';
