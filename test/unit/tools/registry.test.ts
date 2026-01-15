@@ -609,6 +609,83 @@ describe('validateJsonSchema', () => {
     expect(validateJsonSchema(schema, { user: {} }).valid).toBe(false);
     expect(validateJsonSchema(schema, {}).valid).toBe(false);
   });
+
+  it('should reject extra fields when additionalProperties is false', () => {
+    const schema: JsonSchema = {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        value: { type: 'number' },
+      },
+      required: ['name'],
+      additionalProperties: false,
+    };
+
+    // Valid: only allowed properties
+    expect(validateJsonSchema(schema, { name: 'test' }).valid).toBe(true);
+    expect(validateJsonSchema(schema, { name: 'test', value: 42 }).valid).toBe(true);
+
+    // Invalid: extra property
+    const resultWithExtra = validateJsonSchema(schema, { name: 'test', extra: 'field' });
+    expect(resultWithExtra.valid).toBe(false);
+    expect(resultWithExtra.errors).toBeDefined();
+    expect(resultWithExtra.errors?.some(e => e.includes('additional property'))).toBe(true);
+
+    // Invalid: multiple extra properties
+    const resultWithMultiple = validateJsonSchema(schema, {
+      name: 'test',
+      foo: 'bar',
+      baz: 123
+    });
+    expect(resultWithMultiple.valid).toBe(false);
+  });
+
+  it('should allow extra fields when additionalProperties is not set to false', () => {
+    const schema: JsonSchema = {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+      },
+      required: ['name'],
+      // additionalProperties not set (defaults to allowing)
+    };
+
+    // Should allow extra properties
+    expect(validateJsonSchema(schema, { name: 'test', extra: 'allowed' }).valid).toBe(true);
+  });
+
+  it('should handle integer type correctly', () => {
+    const schema: JsonSchema = {
+      type: 'integer',
+    };
+
+    expect(validateJsonSchema(schema, 42).valid).toBe(true);
+    expect(validateJsonSchema(schema, 0).valid).toBe(true);
+    expect(validateJsonSchema(schema, -10).valid).toBe(true);
+    expect(validateJsonSchema(schema, 3.14).valid).toBe(false); // Not an integer
+    expect(validateJsonSchema(schema, 'not a number').valid).toBe(false);
+  });
+
+  it('should handle const values', () => {
+    const schema: JsonSchema = {
+      const: 'expected_value',
+    };
+
+    expect(validateJsonSchema(schema, 'expected_value').valid).toBe(true);
+    expect(validateJsonSchema(schema, 'different_value').valid).toBe(false);
+    expect(validateJsonSchema(schema, 123).valid).toBe(false);
+  });
+
+  it('should handle pattern validation', () => {
+    const schema: JsonSchema = {
+      type: 'string',
+      pattern: '^[a-z]+$',
+    };
+
+    expect(validateJsonSchema(schema, 'lowercase').valid).toBe(true);
+    expect(validateJsonSchema(schema, 'UPPERCASE').valid).toBe(false);
+    expect(validateJsonSchema(schema, 'mixed123').valid).toBe(false);
+  });
 });
 
 // =============================================================================

@@ -449,5 +449,70 @@ describe('PKCE Implementation', () => {
       const challenge = generateCodeChallenge(verifier);
       expect(verifyPKCE(verifier, challenge)).toBe(true);
     });
+
+    it('should fail at boundary -1 (42 characters)', () => {
+      const verifier = 'a'.repeat(42);
+      expect(isValidCodeVerifier(verifier)).toBe(false);
+      expect(() => generateCodeChallenge(verifier)).toThrow('Invalid code verifier');
+    });
+
+    it('should fail at boundary +1 (129 characters)', () => {
+      const verifier = 'a'.repeat(129);
+      expect(isValidCodeVerifier(verifier)).toBe(false);
+    });
+
+    it('should generate different challenges for nearly-identical verifiers', () => {
+      const verifier1 = 'a'.repeat(43);
+      const verifier2 = 'a'.repeat(42) + 'b';
+      const challenge1 = generateCodeChallenge(verifier1);
+      const challenge2 = generateCodeChallenge(verifier2);
+      expect(challenge1).not.toBe(challenge2);
+    });
+
+    it('should reject verifier with trailing space', () => {
+      const verifier = 'a'.repeat(42) + ' ';
+      expect(isValidCodeVerifier(verifier)).toBe(false);
+    });
+
+    it('should reject verifier with leading space', () => {
+      const verifier = ' ' + 'a'.repeat(42);
+      expect(isValidCodeVerifier(verifier)).toBe(false);
+    });
+
+    it('should reject verifier with embedded newline', () => {
+      const verifier = 'a'.repeat(21) + '\n' + 'a'.repeat(21);
+      expect(isValidCodeVerifier(verifier)).toBe(false);
+    });
+
+    it('should reject verifier with equals sign (not in charset)', () => {
+      const verifier = 'a'.repeat(42) + '=';
+      expect(isValidCodeVerifier(verifier)).toBe(false);
+    });
+
+    it('should reject verifier with forward slash (not in charset)', () => {
+      const verifier = 'a'.repeat(42) + '/';
+      expect(isValidCodeVerifier(verifier)).toBe(false);
+    });
+
+    it('should handle all valid characters at boundaries', () => {
+      // Test verifier using only special chars at min length
+      const specialOnly = '-._~'.repeat(10) + '-._';  // 43 chars
+      expect(isValidCodeVerifier(specialOnly)).toBe(true);
+      expect(verifyPKCE(specialOnly, generateCodeChallenge(specialOnly))).toBe(true);
+    });
+
+    it('should produce consistent challenge length', () => {
+      // SHA-256 produces 32 bytes = 256 bits
+      // Base64URL encodes 3 bytes to 4 chars, 32 bytes = 43 chars (no padding)
+      for (let i = 0; i < 10; i++) {
+        const verifier = generateCodeVerifier();
+        const challenge = generateCodeChallenge(verifier);
+        expect(challenge.length).toBe(43);
+      }
+    });
+
+    it('should reject array as verifier', () => {
+      expect(isValidCodeVerifier([] as unknown as string)).toBe(false);
+    });
   });
 });

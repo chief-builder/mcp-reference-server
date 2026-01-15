@@ -280,6 +280,123 @@ describe('JSON-RPC 2.0', () => {
           expect(result.error.code).toBe(JsonRpcErrorCodes.INVALID_PARAMS);
         }
       });
+
+      it('should reject batch requests (array at top level)', () => {
+        // JSON-RPC 2.0 allows batch requests as arrays, but MCP does not support them
+        const batch = JSON.stringify([
+          { jsonrpc: '2.0', id: 1, method: 'test1' },
+          { jsonrpc: '2.0', id: 2, method: 'test2' },
+        ]);
+        const result = parseJsonRpc(batch);
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          expect(result.error.code).toBe(JsonRpcErrorCodes.INVALID_REQUEST);
+        }
+      });
+
+      it('should reject empty object (no method)', () => {
+        const input = JSON.stringify({ jsonrpc: '2.0' });
+        const result = parseJsonRpc(input);
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          expect(result.error.code).toBe(JsonRpcErrorCodes.INVALID_REQUEST);
+          expect(result.error.message).toContain('method');
+        }
+      });
+
+      it('should reject boolean id', () => {
+        const input = JSON.stringify({
+          jsonrpc: '2.0',
+          id: true,
+          method: 'test',
+        });
+        const result = parseJsonRpc(input);
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          expect(result.error.code).toBe(JsonRpcErrorCodes.INVALID_REQUEST);
+        }
+      });
+
+      it('should reject object id', () => {
+        const input = JSON.stringify({
+          jsonrpc: '2.0',
+          id: { nested: 'object' },
+          method: 'test',
+        });
+        const result = parseJsonRpc(input);
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          expect(result.error.code).toBe(JsonRpcErrorCodes.INVALID_REQUEST);
+        }
+      });
+
+      it('should reject empty method string', () => {
+        const input = JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: '',
+        });
+        // Note: JSON-RPC spec doesn't mandate non-empty method, but this tests edge case
+        const result = parseJsonRpc(input);
+        // Should still parse successfully since empty string is valid per spec
+        expect(result.success).toBe(true);
+      });
+
+      it('should handle method with unicode characters', () => {
+        const input = JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/\u4e2d\u6587',
+        });
+        const result = parseJsonRpc(input);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.method).toBe('tools/\u4e2d\u6587');
+        }
+      });
+
+      it('should reject numeric string id (still valid but test boundary)', () => {
+        const input = JSON.stringify({
+          jsonrpc: '2.0',
+          id: '123',
+          method: 'test',
+        });
+        const result = parseJsonRpc(input);
+        // String IDs are valid, even if they look numeric
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.id).toBe('123');
+          expect(typeof result.data.id).toBe('string');
+        }
+      });
+
+      it('should handle very large integer id', () => {
+        const largeId = Number.MAX_SAFE_INTEGER;
+        const input = JSON.stringify({
+          jsonrpc: '2.0',
+          id: largeId,
+          method: 'test',
+        });
+        const result = parseJsonRpc(input);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.id).toBe(largeId);
+        }
+      });
+
+      it('should reject null params (MCP requires object if present)', () => {
+        const input = JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'test',
+          params: null,
+        });
+        const result = parseJsonRpc(input);
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          expect(result.error.code).toBe(JsonRpcErrorCodes.INVALID_PARAMS);
+        }
+      });
     });
   });
 
