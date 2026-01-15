@@ -1,0 +1,1 @@
+{"version":3,"file":"capabilities.js","sourceRoot":"","sources":["../../src/protocol/capabilities.ts"],"names":[],"mappings":"AAAA;;GAEG;AASH,MAAM,UAAU,qBAAqB,CACnC,mBAAuC,EACvC,mBAAuC;IAEvC,yCAAyC;IACzC,MAAM,IAAI,KAAK,CAAC,iBAAiB,CAAC,CAAC;AACrC,CAAC;AAED,MAAM,UAAU,4BAA4B;IAC1C,OAAO;QACL,KAAK,EAAE;YACL,WAAW,EAAE,IAAI;SAClB;QACD,OAAO,EAAE,EAAE;KACZ,CAAC;AACJ,CAAC"}

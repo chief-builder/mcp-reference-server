@@ -1,0 +1,1 @@
+{"version":3,"file":"stdio.d.ts","sourceRoot":"","sources":["../../src/transport/stdio.ts"],"names":[],"mappings":"AAAA;;GAEG;AAEH,MAAM,WAAW,qBAAqB;IACpC,KAAK,CAAC,EAAE,MAAM,CAAC,cAAc,CAAC;IAC9B,MAAM,CAAC,EAAE,MAAM,CAAC,cAAc,CAAC;CAChC;AAED,qBAAa,cAAc;gBACb,QAAQ,CAAC,EAAE,qBAAqB;IAItC,KAAK,IAAI,OAAO,CAAC,IAAI,CAAC;IAItB,IAAI,IAAI,OAAO,CAAC,IAAI,CAAC;CAG5B"}
