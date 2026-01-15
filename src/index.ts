@@ -4,7 +4,14 @@
  */
 
 // Main server
-export { MCPServer } from './server.js';
+export {
+  MCPServer,
+  ShutdownManager,
+  createShutdownManager,
+  type ShutdownManagerOptions,
+  type MCPServerOptions,
+  type CleanupHandler,
+} from './server.js';
 
 // Configuration
 export { loadConfig, type Config } from './config.js';
