@@ -31,6 +31,7 @@ export interface ServerCapabilities {
         listChanged?: boolean;
     };
     logging?: Record<string, unknown>;
+    completions?: Record<string, unknown>;
     experimental?: Record<string, unknown>;
 }
 export interface InitializeParams {

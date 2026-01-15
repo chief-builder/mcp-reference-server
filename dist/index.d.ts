@@ -2,7 +2,7 @@
  * MCP Reference Server - Entry point and public exports
  * Production-quality reference implementation targeting 2025-11-25 specification
  */
-export { MCPServer } from './server.js';
+export { MCPServer, ShutdownManager, createShutdownManager, type ShutdownManagerOptions, type MCPServerOptions, type CleanupHandler, } from './server.js';
 export { loadConfig, type Config } from './config.js';
 export * from './protocol/jsonrpc.js';
 export * from './protocol/lifecycle.js';
@@ -16,7 +16,6 @@ export * from './auth/oauth.js';
 export * from './auth/pkce.js';
 export * from './auth/discovery.js';
 export * from './auth/tokens.js';
-export * from './auth/m2m.js';
 export * from './tools/registry.js';
 export * from './tools/executor.js';
 export * from './completions/handler.js';

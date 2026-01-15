@@ -301,11 +301,11 @@ export type ParseSuccess<T> = {
     success: true;
     data: T;
 };
-export type ParseError = {
+export type ParseFailure = {
     success: false;
     error: JsonRpcError;
 };
-export type ParseResult<T> = ParseSuccess<T> | ParseError;
+export type ParseResult<T> = ParseSuccess<T> | ParseFailure;
 /**
  * Create a JSON-RPC error object
  */

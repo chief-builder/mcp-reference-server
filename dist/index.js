@@ -3,7 +3,7 @@
  * Production-quality reference implementation targeting 2025-11-25 specification
  */
 // Main server
-export { MCPServer } from './server.js';
+export { MCPServer, ShutdownManager, createShutdownManager, } from './server.js';
 // Configuration
 export { loadConfig } from './config.js';
 // Protocol
@@ -21,7 +21,7 @@ export * from './auth/oauth.js';
 export * from './auth/pkce.js';
 export * from './auth/discovery.js';
 export * from './auth/tokens.js';
-export * from './auth/m2m.js';
+// m2m.js re-exports from extensions/oauth-m2m.js - skip to avoid duplicate exports
 // Tools
 export * from './tools/registry.js';
 export * from './tools/executor.js';

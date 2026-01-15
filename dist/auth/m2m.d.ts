@@ -1,24 +1,8 @@
 /**
- * Machine-to-Machine (M2M) OAuth extension
+ * Machine-to-Machine (M2M) OAuth client
+ *
+ * Re-exports from the extensions module for backward compatibility.
+ * The main implementation is in src/extensions/oauth-m2m.ts
  */
-export interface M2MClientConfig {
-    clientId: string;
-    clientSecret: string;
-    tokenEndpoint: string;
-    scopes?: string[];
-}
-export interface M2MTokenResponse {
-    accessToken: string;
-    tokenType: 'Bearer';
-    expiresIn: number;
-    scope?: string;
-}
-export declare class M2MClient {
-    private tokenCache?;
-    private readonly config;
-    constructor(config: M2MClientConfig);
-    getConfig(): M2MClientConfig;
-    getAccessToken(): Promise<string>;
-    private requestToken;
-}
+export { M2MClient, M2MAuthError, createM2MClient, createAuth0M2MClient, type M2MClientConfig, type NormalizedM2MTokenResponse as M2MTokenResponse, type OAuthM2MExtensionConfig, type ClientAuthMethod, } from '../extensions/oauth-m2m.js';
 //# sourceMappingURL=m2m.d.ts.map

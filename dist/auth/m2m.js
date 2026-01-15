@@ -1,29 +1,9 @@
 /**
- * Machine-to-Machine (M2M) OAuth extension
+ * Machine-to-Machine (M2M) OAuth client
+ *
+ * Re-exports from the extensions module for backward compatibility.
+ * The main implementation is in src/extensions/oauth-m2m.ts
  */
-export class M2MClient {
-    tokenCache;
-    config;
-    constructor(config) {
-        this.config = config;
-    }
-    getConfig() {
-        return this.config;
-    }
-    async getAccessToken() {
-        if (this.tokenCache && Date.now() < this.tokenCache.expiresAt - 60000) {
-            return this.tokenCache.token;
-        }
-        const response = await this.requestToken();
-        this.tokenCache = {
-            token: response.accessToken,
-            expiresAt: Date.now() + response.expiresIn * 1000,
-        };
-        return response.accessToken;
-    }
-    async requestToken() {
-        // TODO: Implement client credentials grant
-        throw new Error('Not implemented');
-    }
-}
+// Re-export types and classes from the extension module
+export { M2MClient, M2MAuthError, createM2MClient, createAuth0M2MClient, } from '../extensions/oauth-m2m.js';
 //# sourceMappingURL=m2m.js.map

@@ -4,15 +4,24 @@
   "description": "Production-quality reference implementation of MCP server targeting 2025-11-25 specification",
   "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "mcp-reference-server": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./cli": {
+      "types": "./dist/cli.d.ts",
+      "import": "./dist/cli.js"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    ".env.example"
   ],
   "scripts": {
     "build": "tsc",
@@ -20,20 +29,32 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "start": "node dist/index.js",
-    "dev": "tsx src/index.ts",
+    "start": "node dist/cli.js",
+    "dev": "tsx src/cli.ts",
     "lint": "eslint src test",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "keywords": [
     "mcp",
     "model-context-protocol",
     "ai",
     "llm",
-    "reference-implementation"
+    "reference-implementation",
+    "server",
+    "claude",
+    "anthropic"
   ],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anthropics/mcp-reference-server.git"
+  },
+  "homepage": "https://github.com/anthropics/mcp-reference-server#readme",
+  "bugs": {
+    "url": "https://github.com/anthropics/mcp-reference-server/issues"
+  },
   "engines": {
     "node": ">=20.0.0"
   },
