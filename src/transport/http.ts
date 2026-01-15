@@ -23,6 +23,7 @@ import {
 } from '../protocol/jsonrpc.js';
 import { PROTOCOL_VERSION } from '../protocol/lifecycle.js';
 import { SessionManager, Session } from './session.js';
+import { SSEManager } from './sse.js';
 
 // =============================================================================
 // Constants
@@ -62,6 +63,17 @@ export interface HttpTransportOptions {
    * Session TTL in milliseconds. Default: 30 minutes
    */
   sessionTtlMs?: number;
+
+  /**
+   * SSE event buffer size for replay. Default: 100
+   */
+  sseBufferSize?: number;
+
+  /**
+   * SSE keep-alive interval in milliseconds. Default: 30000 (30 seconds)
+   * Set to 0 to disable keep-alive pings
+   */
+  sseKeepAliveInterval?: number;
 }
 
 /**
@@ -96,6 +108,7 @@ export class HttpTransport {
   private readonly host: string;
   private readonly allowedOrigins: string[];
   private readonly sessionManager: SessionManager;
+  private readonly sseManager: SSEManager;
   private server: Server | null = null;
   private messageHandler: HttpMessageHandler | null = null;
 
@@ -106,6 +119,14 @@ export class HttpTransport {
     this.sessionManager = new SessionManager(
       options.sessionTtlMs !== undefined ? { ttlMs: options.sessionTtlMs } : undefined
     );
+    const sseOptions: { bufferSize?: number; keepAliveInterval?: number } = {};
+    if (options.sseBufferSize !== undefined) {
+      sseOptions.bufferSize = options.sseBufferSize;
+    }
+    if (options.sseKeepAliveInterval !== undefined) {
+      sseOptions.keepAliveInterval = options.sseKeepAliveInterval;
+    }
+    this.sseManager = new SSEManager(sseOptions);
 
     // Use provided app or create new one
     this.app = options.app ?? express();
@@ -127,6 +148,13 @@ export class HttpTransport {
    */
   getSessionManager(): SessionManager {
     return this.sessionManager;
+  }
+
+  /**
+   * Get the SSE manager instance
+   */
+  getSSEManager(): SSEManager {
+    return this.sseManager;
   }
 
   /**
@@ -163,6 +191,7 @@ export class HttpTransport {
    */
   async close(): Promise<void> {
     this.sessionManager.stopCleanup();
+    this.sseManager.closeAll();
 
     if (!this.server) {
       return;
@@ -226,6 +255,7 @@ export class HttpTransport {
         MCP_PROTOCOL_VERSION_HEADER,
         MCP_SESSION_ID_HEADER,
         'Authorization',
+        'Last-Event-Id',
       ].join(', '));
       res.setHeader('Access-Control-Expose-Headers', MCP_SESSION_ID_HEADER);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -253,7 +283,7 @@ export class HttpTransport {
   }
 
   /**
-   * Handle GET request (SSE - placeholder)
+   * Handle GET request (SSE stream for server-initiated messages)
    */
   private handleGet(req: Request, res: Response): void {
     // Validate Origin for non-browser requests or when Origin is present
@@ -263,11 +293,50 @@ export class HttpTransport {
       return;
     }
 
-    // SSE implementation will go here in c6t.12
-    // For now, return 501 Not Implemented
-    res.status(501).json({
-      error: 'SSE not implemented. Use POST for JSON-RPC messages.',
-    });
+    // Validate Accept header - client should request text/event-stream
+    const accept = req.get('Accept');
+    if (!accept?.includes('text/event-stream')) {
+      res.status(406).json({
+        error: 'Accept header must include text/event-stream',
+      });
+      return;
+    }
+
+    // Require session ID for SSE connections
+    const sessionId = req.get(MCP_SESSION_ID_HEADER);
+    if (!sessionId) {
+      res.status(400).json({
+        error: `Missing required header: ${MCP_SESSION_ID_HEADER}`,
+      });
+      return;
+    }
+
+    // Validate session exists
+    const session = this.sessionManager.getSession(sessionId);
+    if (!session) {
+      res.status(404).json({
+        error: 'Session not found',
+      });
+      return;
+    }
+
+    // Touch session to keep it alive
+    this.sessionManager.touchSession(sessionId);
+
+    // Check for Last-Event-Id header for reconnection
+    const lastEventId = req.get('Last-Event-Id');
+
+    // Create or reconnect SSE stream
+    if (lastEventId) {
+      // Reconnection - replay events after the last received ID
+      this.sseManager.handleReconnect(sessionId, lastEventId, res);
+    } else {
+      // New connection
+      this.sseManager.createStream(sessionId, res);
+    }
+
+    // Note: The stream stays open until the client disconnects
+    // or the session is destroyed. Events are pushed via sseManager.sendEvent()
   }
 
   /**

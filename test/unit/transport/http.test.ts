@@ -688,8 +688,26 @@ describe('HttpTransport', () => {
     });
   });
 
-  describe('GET /mcp endpoint', () => {
-    it('should return 501 Not Implemented (SSE not yet implemented)', async () => {
+  describe('GET /mcp endpoint (SSE)', () => {
+    it('should reject requests without Accept: text/event-stream', async () => {
+      transport = createTestTransport({ allowedOrigins: ['*'] });
+      await transport.start();
+
+      const session = transport.getSessionManager().createSession();
+      const port = (transport as unknown as { port: number }).port;
+      const response = await fetch(`http://127.0.0.1:${port}/mcp`, {
+        method: 'GET',
+        headers: {
+          'MCP-Session-Id': session.id,
+        },
+      });
+
+      expect(response.status).toBe(406);
+      const body = await response.json();
+      expect(body.error).toContain('text/event-stream');
+    });
+
+    it('should reject requests without session ID', async () => {
       transport = createTestTransport({ allowedOrigins: ['*'] });
       await transport.start();
 
@@ -701,9 +719,60 @@ describe('HttpTransport', () => {
         },
       });
 
-      expect(response.status).toBe(501);
+      expect(response.status).toBe(400);
       const body = await response.json();
-      expect(body.error).toContain('SSE not implemented');
+      expect(body.error).toContain('mcp-session-id');
+    });
+
+    it('should reject invalid session ID', async () => {
+      transport = createTestTransport({ allowedOrigins: ['*'] });
+      await transport.start();
+
+      const port = (transport as unknown as { port: number }).port;
+      const response = await fetch(`http://127.0.0.1:${port}/mcp`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/event-stream',
+          'MCP-Session-Id': 'invalid-session',
+        },
+      });
+
+      expect(response.status).toBe(404);
+      const body = await response.json();
+      expect(body.error).toContain('Session not found');
+    });
+
+    it('should establish SSE connection with valid session', async () => {
+      transport = createTestTransport({ allowedOrigins: ['*'], sseKeepAliveInterval: 0 });
+      await transport.start();
+
+      const session = transport.getSessionManager().createSession();
+      const port = (transport as unknown as { port: number }).port;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 500);
+
+      try {
+        const response = await fetch(`http://127.0.0.1:${port}/mcp`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'text/event-stream',
+            'MCP-Session-Id': session.id,
+          },
+          signal: controller.signal,
+        });
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get('content-type')).toBe('text/event-stream');
+        expect(response.headers.get('cache-control')).toBe('no-cache');
+      } catch (err) {
+        // AbortError is expected - we just want to verify headers
+        if ((err as Error).name !== 'AbortError') {
+          throw err;
+        }
+      } finally {
+        clearTimeout(timeoutId);
+      }
     });
 
     it('should reject disallowed origins', async () => {
@@ -715,10 +784,24 @@ describe('HttpTransport', () => {
         method: 'GET',
         headers: {
           'Origin': 'http://evil.com',
+          'Accept': 'text/event-stream',
         },
       });
 
       expect(response.status).toBe(403);
+    });
+
+    it('should provide SSEManager for sending events', async () => {
+      transport = createTestTransport({ allowedOrigins: ['*'], sseKeepAliveInterval: 0 });
+      await transport.start();
+
+      const session = transport.getSessionManager().createSession();
+      const sseManager = transport.getSSEManager();
+
+      expect(sseManager).toBeDefined();
+
+      // Before connection, hasStream should be false
+      expect(sseManager.hasStream(session.id)).toBe(false);
     });
   });
 });
