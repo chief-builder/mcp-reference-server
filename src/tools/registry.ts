@@ -8,6 +8,12 @@
 import { z } from 'zod';
 import { EventEmitter } from 'events';
 import type { ToolResult } from '../protocol/errors.js';
+import {
+  parseCursor,
+  createCursor,
+  clampPageSize,
+  DEFAULT_PAGE_SIZE,
+} from '../protocol/pagination.js';
 
 // =============================================================================
 // JSON Schema Types
@@ -204,6 +210,15 @@ export const ToolAnnotationsSchema = z.object({
 // Pagination Types
 // =============================================================================
 
+// Re-export pagination helpers for convenience
+export {
+  parseCursor,
+  createCursor,
+  clampPageSize,
+  DEFAULT_PAGE_SIZE,
+  MAX_PAGE_SIZE,
+} from '../protocol/pagination.js';
+
 /**
  * Paginated list result
  */
@@ -223,8 +238,6 @@ export interface ToolRegistryEvents {
 // =============================================================================
 // Tool Registry
 // =============================================================================
-
-const DEFAULT_PAGE_SIZE = 50;
 
 /**
  * Registry for tool definitions with pagination and change notifications
@@ -307,27 +320,16 @@ export class ToolRegistry extends EventEmitter {
 
   /**
    * List all tools with pagination
-   * @param cursor Optional cursor for pagination (base64 encoded index)
-   * @param pageSize Number of items per page (default: 50)
+   * @param cursor Optional opaque cursor for pagination
+   * @param pageSize Number of items per page (default: 50, max: 200)
    */
   listTools(cursor?: string, pageSize: number = DEFAULT_PAGE_SIZE): PaginatedToolList {
-    // Determine starting index from cursor
-    let startIndex = 0;
-    if (cursor) {
-      try {
-        const decoded = Buffer.from(cursor, 'base64').toString('utf-8');
-        const parsed = parseInt(decoded, 10);
-        if (!isNaN(parsed) && parsed >= 0) {
-          startIndex = parsed;
-        }
-      } catch {
-        // Invalid cursor, start from beginning
-        startIndex = 0;
-      }
-    }
+    // Parse and validate cursor using pagination helper
+    const cursorResult = parseCursor(cursor ?? '');
+    const startIndex = cursorResult.valid ? cursorResult.offset : 0;
 
-    // Ensure valid page size
-    const effectivePageSize = Math.max(1, Math.min(pageSize, 1000));
+    // Clamp page size to valid range
+    const effectivePageSize = clampPageSize(pageSize);
 
     // Get slice of tools
     const endIndex = Math.min(startIndex + effectivePageSize, this.toolOrder.length);
@@ -339,10 +341,10 @@ export class ToolRegistry extends EventEmitter {
       .filter((tool): tool is Tool => tool !== undefined)
       .map((tool) => this.toExternalDefinition(tool));
 
-    // Determine next cursor
+    // Generate next cursor if there are more items
     let nextCursor: string | undefined;
     if (endIndex < this.toolOrder.length) {
-      nextCursor = Buffer.from(endIndex.toString()).toString('base64');
+      nextCursor = createCursor(endIndex);
     }
 
     return { tools, nextCursor };

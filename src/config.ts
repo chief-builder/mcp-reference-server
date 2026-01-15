@@ -7,12 +7,19 @@ import { z } from 'zod';
 /**
  * Configuration schema with validation rules
  */
+/** Default pagination page size */
+export const MCP_PAGINATION_DEFAULT = 50;
+
+/** Maximum pagination page size */
+export const MCP_PAGINATION_MAX = 200;
+
 export const ConfigSchema = z.object({
   port: z.number().int().min(1).max(65535).default(3000),
   host: z.string().default('0.0.0.0'),
   transport: z.enum(['stdio', 'http', 'both']).default('both'),
   statelessMode: z.boolean().default(false),
-  pageSize: z.number().int().min(1).max(1000).default(50),
+  pageSize: z.number().int().min(1).max(MCP_PAGINATION_MAX).default(MCP_PAGINATION_DEFAULT),
+  maxPageSize: z.number().int().min(1).max(1000).default(MCP_PAGINATION_MAX),
   requestTimeoutMs: z.number().int().min(0).default(60000),
   shutdownTimeoutMs: z.number().int().min(0).default(30000),
   progressIntervalMs: z.number().int().min(0).default(100),
@@ -66,7 +73,8 @@ export function loadConfig(): Config {
     host: process.env['MCP_HOST'] || undefined,
     transport: process.env['MCP_TRANSPORT'] || undefined,
     statelessMode: parseBoolean(process.env['MCP_STATELESS_MODE'], false),
-    pageSize: parseInteger(process.env['MCP_PAGE_SIZE']),
+    pageSize: parseInteger(process.env['MCP_PAGINATION_DEFAULT']) ?? parseInteger(process.env['MCP_PAGE_SIZE']),
+    maxPageSize: parseInteger(process.env['MCP_PAGINATION_MAX']),
     requestTimeoutMs: parseInteger(process.env['MCP_REQUEST_TIMEOUT_MS']),
     shutdownTimeoutMs: parseInteger(process.env['MCP_SHUTDOWN_TIMEOUT_MS']),
     progressIntervalMs: parseInteger(process.env['MCP_PROGRESS_INTERVAL_MS']),
@@ -94,6 +102,7 @@ export function loadConfig(): Config {
   if (rawConfig.transport !== undefined) configInput.transport = rawConfig.transport;
   configInput.statelessMode = rawConfig.statelessMode;
   if (rawConfig.pageSize !== undefined) configInput.pageSize = rawConfig.pageSize;
+  if (rawConfig.maxPageSize !== undefined) configInput.maxPageSize = rawConfig.maxPageSize;
   if (rawConfig.requestTimeoutMs !== undefined) configInput.requestTimeoutMs = rawConfig.requestTimeoutMs;
   if (rawConfig.shutdownTimeoutMs !== undefined) configInput.shutdownTimeoutMs = rawConfig.shutdownTimeoutMs;
   if (rawConfig.progressIntervalMs !== undefined) configInput.progressIntervalMs = rawConfig.progressIntervalMs;

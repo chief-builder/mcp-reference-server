@@ -73,14 +73,14 @@ describe('Config', () => {
 
     it('should accept valid page sizes', () => {
       expect(ConfigSchema.parse({ pageSize: 1 }).pageSize).toBe(1);
-      expect(ConfigSchema.parse({ pageSize: 500 }).pageSize).toBe(500);
-      expect(ConfigSchema.parse({ pageSize: 1000 }).pageSize).toBe(1000);
+      expect(ConfigSchema.parse({ pageSize: 50 }).pageSize).toBe(50);
+      expect(ConfigSchema.parse({ pageSize: 200 }).pageSize).toBe(200);
     });
 
     it('should reject invalid page sizes', () => {
       expect(() => ConfigSchema.parse({ pageSize: 0 })).toThrow();
       expect(() => ConfigSchema.parse({ pageSize: -1 })).toThrow();
-      expect(() => ConfigSchema.parse({ pageSize: 1001 })).toThrow();
+      expect(() => ConfigSchema.parse({ pageSize: 201 })).toThrow();
     });
 
     it('should accept valid log levels', () => {
