@@ -74,6 +74,16 @@ export interface HttpTransportOptions {
    * Set to 0 to disable keep-alive pings
    */
   sseKeepAliveInterval?: number;
+
+  /**
+   * Stateless mode for horizontal scaling. Default: false
+   * When true:
+   * - No session ID generation or validation
+   * - No Mcp-Session-Id header in responses
+   * - SSE streams are not supported (returns 406)
+   * - Each request is independent
+   */
+  statelessMode?: boolean;
 }
 
 /**
@@ -109,6 +119,7 @@ export class HttpTransport {
   private readonly allowedOrigins: string[];
   private readonly sessionManager: SessionManager;
   private readonly sseManager: SSEManager;
+  private readonly statelessMode: boolean;
   private server: Server | null = null;
   private messageHandler: HttpMessageHandler | null = null;
 
@@ -116,6 +127,7 @@ export class HttpTransport {
     this.port = options.port;
     this.host = options.host ?? '0.0.0.0';
     this.allowedOrigins = options.allowedOrigins ?? [];
+    this.statelessMode = options.statelessMode ?? false;
     this.sessionManager = new SessionManager(
       options.sessionTtlMs !== undefined ? { ttlMs: options.sessionTtlMs } : undefined
     );
@@ -162,6 +174,13 @@ export class HttpTransport {
    */
   getApp(): Express {
     return this.app;
+  }
+
+  /**
+   * Check if transport is in stateless mode
+   */
+  isStateless(): boolean {
+    return this.statelessMode;
   }
 
   /**
@@ -286,6 +305,14 @@ export class HttpTransport {
    * Handle GET request (SSE stream for server-initiated messages)
    */
   private handleGet(req: Request, res: Response): void {
+    // In stateless mode, SSE is not supported
+    if (this.statelessMode) {
+      res.status(406).json({
+        error: 'SSE streams are not supported in stateless mode',
+      });
+      return;
+    }
+
     // Validate Origin for non-browser requests or when Origin is present
     const origin = req.get('Origin');
     if (origin && !this.isOriginAllowed(origin)) {
@@ -393,7 +420,16 @@ export class HttpTransport {
       // Check if this is an initialize request
       const isInitialize = message.method === 'initialize';
 
-      if (isInitialize) {
+      if (this.statelessMode) {
+        // Stateless mode: create ephemeral session for this request only
+        // No session ID validation, no persistence
+        session = {
+          id: 'stateless',
+          createdAt: new Date(),
+          lastActiveAt: new Date(),
+          state: 'ready',
+        };
+      } else if (isInitialize) {
         // Initialize request - create new session
         // If a session ID is provided, it should be ignored for initialize
         session = this.sessionManager.createSession();
@@ -439,8 +475,8 @@ export class HttpTransport {
         // Requests get JSON-RPC response
         res.setHeader('Content-Type', 'application/json');
 
-        // Include session ID header for initialize response
-        if (isInitialize && response) {
+        // Include session ID header for initialize response (not in stateless mode)
+        if (isInitialize && response && !this.statelessMode) {
           res.setHeader(MCP_SESSION_ID_HEADER, session.id);
         }
 

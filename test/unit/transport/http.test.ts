@@ -815,3 +815,294 @@ describe('HttpTransportError', () => {
     expect(error).toBeInstanceOf(Error);
   });
 });
+
+// =============================================================================
+// Stateless Mode Tests
+// =============================================================================
+
+describe('HttpTransport Stateless Mode', () => {
+  let transport: HttpTransport;
+
+  afterEach(async () => {
+    if (transport) {
+      await transport.close().catch(() => {});
+    }
+  });
+
+  describe('constructor', () => {
+    it('should default to stateful mode', () => {
+      transport = new HttpTransport({ port: getTestPort() });
+      expect(transport.isStateless()).toBe(false);
+    });
+
+    it('should enable stateless mode when configured', () => {
+      transport = new HttpTransport({ port: getTestPort(), statelessMode: true });
+      expect(transport.isStateless()).toBe(true);
+    });
+  });
+
+  describe('POST /mcp endpoint in stateless mode', () => {
+    it('should not require session ID for any request', async () => {
+      transport = new HttpTransport({
+        port: getTestPort(),
+        statelessMode: true,
+        allowedOrigins: ['*'],
+      });
+      transport.setMessageHandler(async (msg) => {
+        return createSuccessResponse((msg as { id: number }).id, { tools: [] });
+      });
+      await transport.start();
+
+      const port = (transport as unknown as { port: number }).port;
+      const response = await fetch(`http://127.0.0.1:${port}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'MCP-Protocol-Version': PROTOCOL_VERSION,
+        },
+        body: JSON.stringify(createRequest(1, 'tools/list')),
+      });
+
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body.result).toEqual({ tools: [] });
+    });
+
+    it('should not return session ID header on initialize', async () => {
+      transport = new HttpTransport({
+        port: getTestPort(),
+        statelessMode: true,
+        allowedOrigins: ['*'],
+      });
+      transport.setMessageHandler(async (msg) => {
+        return createSuccessResponse((msg as { id: number }).id, {
+          protocolVersion: PROTOCOL_VERSION,
+          capabilities: {},
+          serverInfo: { name: 'test', version: '1.0.0' },
+        });
+      });
+      await transport.start();
+
+      const port = (transport as unknown as { port: number }).port;
+      const response = await fetch(`http://127.0.0.1:${port}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'MCP-Protocol-Version': PROTOCOL_VERSION,
+        },
+        body: JSON.stringify(createRequest(1, 'initialize', {
+          protocolVersion: PROTOCOL_VERSION,
+          capabilities: {},
+          clientInfo: { name: 'test-client', version: '1.0.0' },
+        })),
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('mcp-session-id')).toBeNull();
+    });
+
+    it('should accept requests with any or no session ID', async () => {
+      transport = new HttpTransport({
+        port: getTestPort(),
+        statelessMode: true,
+        allowedOrigins: ['*'],
+      });
+      transport.setMessageHandler(async (msg) => {
+        return createSuccessResponse((msg as { id: number }).id, { result: 'ok' });
+      });
+      await transport.start();
+
+      const port = (transport as unknown as { port: number }).port;
+
+      // Request without session ID
+      const response1 = await fetch(`http://127.0.0.1:${port}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'MCP-Protocol-Version': PROTOCOL_VERSION,
+        },
+        body: JSON.stringify(createRequest(1, 'test')),
+      });
+      expect(response1.status).toBe(200);
+
+      // Request with arbitrary session ID (should be ignored)
+      const response2 = await fetch(`http://127.0.0.1:${port}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'MCP-Protocol-Version': PROTOCOL_VERSION,
+          'MCP-Session-Id': 'any-random-id',
+        },
+        body: JSON.stringify(createRequest(2, 'test')),
+      });
+      expect(response2.status).toBe(200);
+    });
+
+    it('should pass ephemeral session to handler', async () => {
+      transport = new HttpTransport({
+        port: getTestPort(),
+        statelessMode: true,
+        allowedOrigins: ['*'],
+      });
+      let receivedSession: Session | null = null;
+      transport.setMessageHandler(async (msg, session) => {
+        receivedSession = session;
+        return createSuccessResponse((msg as { id: number }).id, {});
+      });
+      await transport.start();
+
+      const port = (transport as unknown as { port: number }).port;
+      await fetch(`http://127.0.0.1:${port}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'MCP-Protocol-Version': PROTOCOL_VERSION,
+        },
+        body: JSON.stringify(createRequest(1, 'test')),
+      });
+
+      expect(receivedSession).toBeDefined();
+      expect(receivedSession!.id).toBe('stateless');
+      expect(receivedSession!.state).toBe('ready');
+    });
+
+    it('should handle notifications in stateless mode', async () => {
+      transport = new HttpTransport({
+        port: getTestPort(),
+        statelessMode: true,
+        allowedOrigins: ['*'],
+      });
+      let receivedNotification = false;
+      transport.setMessageHandler(async () => {
+        receivedNotification = true;
+        return null;
+      });
+      await transport.start();
+
+      const port = (transport as unknown as { port: number }).port;
+      const response = await fetch(`http://127.0.0.1:${port}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'MCP-Protocol-Version': PROTOCOL_VERSION,
+        },
+        body: JSON.stringify(createNotification('notifications/test')),
+      });
+
+      expect(response.status).toBe(202);
+      expect(receivedNotification).toBe(true);
+    });
+  });
+
+  describe('GET /mcp endpoint (SSE) in stateless mode', () => {
+    it('should reject SSE connections with 406', async () => {
+      transport = new HttpTransport({
+        port: getTestPort(),
+        statelessMode: true,
+        allowedOrigins: ['*'],
+      });
+      await transport.start();
+
+      const port = (transport as unknown as { port: number }).port;
+      const response = await fetch(`http://127.0.0.1:${port}/mcp`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/event-stream',
+          'MCP-Session-Id': 'any-id',
+        },
+      });
+
+      expect(response.status).toBe(406);
+      const body = await response.json();
+      expect(body.error).toContain('stateless mode');
+    });
+
+    it('should reject SSE even without Accept header', async () => {
+      transport = new HttpTransport({
+        port: getTestPort(),
+        statelessMode: true,
+        allowedOrigins: ['*'],
+      });
+      await transport.start();
+
+      const port = (transport as unknown as { port: number }).port;
+      const response = await fetch(`http://127.0.0.1:${port}/mcp`, {
+        method: 'GET',
+        headers: {},
+      });
+
+      expect(response.status).toBe(406);
+      const body = await response.json();
+      expect(body.error).toContain('stateless mode');
+    });
+  });
+
+  describe('header validation still works in stateless mode', () => {
+    it('should still require Content-Type header', async () => {
+      transport = new HttpTransport({
+        port: getTestPort(),
+        statelessMode: true,
+        allowedOrigins: ['*'],
+      });
+      transport.setMessageHandler(async () => null);
+      await transport.start();
+
+      const port = (transport as unknown as { port: number }).port;
+      const response = await fetch(`http://127.0.0.1:${port}/mcp`, {
+        method: 'POST',
+        headers: {
+          'MCP-Protocol-Version': PROTOCOL_VERSION,
+        },
+        body: JSON.stringify(createRequest(1, 'test')),
+      });
+
+      expect(response.status).toBe(415);
+    });
+
+    it('should still require MCP-Protocol-Version header', async () => {
+      transport = new HttpTransport({
+        port: getTestPort(),
+        statelessMode: true,
+        allowedOrigins: ['*'],
+      });
+      transport.setMessageHandler(async () => null);
+      await transport.start();
+
+      const port = (transport as unknown as { port: number }).port;
+      const response = await fetch(`http://127.0.0.1:${port}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(createRequest(1, 'test')),
+      });
+
+      expect(response.status).toBe(400);
+      const body = await response.json();
+      expect(body.error).toContain('mcp-protocol-version');
+    });
+
+    it('should still validate Origin header', async () => {
+      transport = new HttpTransport({
+        port: getTestPort(),
+        statelessMode: true,
+        allowedOrigins: ['http://allowed.com'],
+      });
+      transport.setMessageHandler(async () => null);
+      await transport.start();
+
+      const port = (transport as unknown as { port: number }).port;
+      const response = await fetch(`http://127.0.0.1:${port}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'MCP-Protocol-Version': PROTOCOL_VERSION,
+          'Origin': 'http://evil.com',
+        },
+        body: JSON.stringify(createRequest(1, 'test')),
+      });
+
+      expect(response.status).toBe(403);
+    });
+  });
+});
