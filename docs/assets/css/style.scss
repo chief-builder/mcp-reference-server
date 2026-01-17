@@ -1,0 +1,144 @@
+---
+---
+
+@import "jekyll-theme-minimal";
+
+/* Custom styles for MCP Reference Server docs */
+
+/* Wider layout - use more screen real estate */
+.wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Adjust the two-column layout */
+section {
+  width: 70%;
+  float: right;
+}
+
+header {
+  width: 25%;
+  float: left;
+  position: sticky;
+  top: 20px;
+}
+
+/* On larger screens, give content more room */
+@media screen and (min-width: 1400px) {
+  .wrapper {
+    max-width: 1400px;
+  }
+
+  section {
+    width: 75%;
+  }
+
+  header {
+    width: 22%;
+  }
+}
+
+/* On medium screens */
+@media screen and (max-width: 960px) {
+  section {
+    width: 100%;
+    float: none;
+  }
+
+  header {
+    width: 100%;
+    float: none;
+    position: relative;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+}
+
+/* Improve code block styling */
+pre {
+  padding: 16px;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.5;
+  border-radius: 6px;
+  background-color: #f6f8fa;
+}
+
+code {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9em;
+}
+
+/* Better table styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+
+table th,
+table td {
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  text-align: left;
+}
+
+table th {
+  background-color: #f6f8fa;
+  font-weight: 600;
+}
+
+table tr:nth-child(even) {
+  background-color: #fafbfc;
+}
+
+/* Improve heading hierarchy */
+h1 {
+  border-bottom: 2px solid #0366d6;
+  padding-bottom: 0.3em;
+  margin-bottom: 1em;
+}
+
+h2 {
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 0.3em;
+  margin-top: 1.5em;
+}
+
+h3 {
+  margin-top: 1.2em;
+}
+
+/* Better link styling in content */
+section a {
+  color: #0366d6;
+  text-decoration: none;
+}
+
+section a:hover {
+  text-decoration: underline;
+}
+
+/* Navigation improvements */
+header nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 1em 0;
+}
+
+header nav ul li {
+  margin: 0.5em 0;
+}
+
+header nav ul li a {
+  color: #0366d6;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+header nav ul li a:hover {
+  text-decoration: underline;
+}
