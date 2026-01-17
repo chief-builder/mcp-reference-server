@@ -7,9 +7,11 @@
 
 /* Wider layout - use more screen real estate */
 .wrapper {
+  width: 100%;          /* Override theme's fixed 860px */
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 40px;
+  box-sizing: border-box;
 }
 
 /* Adjust the two-column layout */
@@ -28,15 +30,15 @@ header {
 /* On larger screens, give content more room */
 @media screen and (min-width: 1400px) {
   .wrapper {
-    max-width: 1400px;
+    max-width: 1600px;
   }
 
   section {
-    width: 75%;
+    width: 78%;
   }
 
   header {
-    width: 22%;
+    width: 18%;
   }
 }
 
