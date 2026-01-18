@@ -81,8 +81,9 @@ export declare const ConfigSchema: z.ZodObject<{
 export type Config = z.infer<typeof ConfigSchema>;
 /**
  * Load configuration from environment variables
+ * @param env - Environment object to read from (defaults to process.env)
  */
-export declare function loadConfig(): Config;
+export declare function loadConfig(env?: NodeJS.ProcessEnv): Config;
 /**
  * Get the current configuration (singleton)
  * Loads from environment on first call
@@ -96,4 +97,9 @@ export declare function reloadConfig(): Config;
  * Reset config singleton (for testing)
  */
 export declare function resetConfig(): void;
+/**
+ * Set config directly (for testing)
+ * Allows tests to inject a specific configuration without modifying process.env
+ */
+export declare function setConfig(newConfig: Config): void;
 //# sourceMappingURL=config.d.ts.map

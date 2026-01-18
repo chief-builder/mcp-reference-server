@@ -6,6 +6,7 @@ import {
   getConfig,
   reloadConfig,
   resetConfig,
+  setConfig,
 } from '../../src/config.js';
 
 describe('Config', () => {
@@ -271,6 +272,78 @@ describe('Config', () => {
       const config = loadConfig();
       expect(config.port).toBe(3000);
     });
+
+    it('should load config from custom env object', () => {
+      const customEnv: NodeJS.ProcessEnv = {
+        MCP_PORT: '9000',
+        MCP_HOST: 'custom.host.com',
+        MCP_TRANSPORT: 'http',
+        MCP_DEBUG: 'true',
+        MCP_LOG_LEVEL: 'warning',
+      };
+      const config = loadConfig(customEnv);
+      expect(config.port).toBe(9000);
+      expect(config.host).toBe('custom.host.com');
+      expect(config.transport).toBe('http');
+      expect(config.debug).toBe(true);
+      expect(config.logLevel).toBe('warning');
+    });
+
+    it('should not modify process.env when using custom env object', () => {
+      const customEnv: NodeJS.ProcessEnv = {
+        MCP_PORT: '7777',
+      };
+      loadConfig(customEnv);
+      expect(process.env['MCP_PORT']).toBeUndefined();
+    });
+
+    it('should load all config values from custom env object', () => {
+      const customEnv: NodeJS.ProcessEnv = {
+        MCP_PORT: '4567',
+        MCP_HOST: '192.168.1.1',
+        MCP_TRANSPORT: 'stdio',
+        MCP_STATELESS_MODE: 'true',
+        MCP_PAGE_SIZE: '75',
+        MCP_PAGINATION_MAX: '150',
+        MCP_REQUEST_TIMEOUT_MS: '45000',
+        MCP_SHUTDOWN_TIMEOUT_MS: '20000',
+        MCP_PROGRESS_INTERVAL_MS: '250',
+        MCP_DEBUG: '1',
+        MCP_LOG_LEVEL: 'error',
+        MCP_AUTH0_DOMAIN: 'custom.auth0.com',
+        MCP_AUTH0_AUDIENCE: 'https://custom.api.com',
+        MCP_AUTH0_CLIENT_ID: 'custom-client-id',
+        MCP_M2M_CLIENT_SECRET: 'custom-secret',
+        OTEL_EXPORTER_OTLP_ENDPOINT: 'http://custom-otel:4318',
+      };
+      const config = loadConfig(customEnv);
+      expect(config.port).toBe(4567);
+      expect(config.host).toBe('192.168.1.1');
+      expect(config.transport).toBe('stdio');
+      expect(config.statelessMode).toBe(true);
+      expect(config.pageSize).toBe(75);
+      expect(config.maxPageSize).toBe(150);
+      expect(config.requestTimeoutMs).toBe(45000);
+      expect(config.shutdownTimeoutMs).toBe(20000);
+      expect(config.progressIntervalMs).toBe(250);
+      expect(config.debug).toBe(true);
+      expect(config.logLevel).toBe('error');
+      expect(config.auth0.domain).toBe('custom.auth0.com');
+      expect(config.auth0.audience).toBe('https://custom.api.com');
+      expect(config.auth0.clientId).toBe('custom-client-id');
+      expect(config.m2mClientSecret).toBe('custom-secret');
+      expect(config.otelEndpoint).toBe('http://custom-otel:4318');
+    });
+
+    it('should use defaults when custom env is empty', () => {
+      const customEnv: NodeJS.ProcessEnv = {};
+      const config = loadConfig(customEnv);
+      expect(config.port).toBe(3000);
+      expect(config.host).toBe('0.0.0.0');
+      expect(config.transport).toBe('both');
+      expect(config.debug).toBe(false);
+      expect(config.logLevel).toBe('info');
+    });
   });
 
   describe('getConfig', () => {
@@ -322,6 +395,80 @@ describe('Config', () => {
       resetConfig();
       process.env['MCP_PORT'] = '5000';
       expect(getConfig().port).toBe(5000);
+    });
+  });
+
+  describe('setConfig', () => {
+    it('should set config directly', () => {
+      const customConfig: Config = {
+        port: 9999,
+        host: 'injected.host',
+        transport: 'stdio',
+        statelessMode: true,
+        pageSize: 100,
+        maxPageSize: 500,
+        requestTimeoutMs: 10000,
+        shutdownTimeoutMs: 5000,
+        progressIntervalMs: 50,
+        debug: true,
+        logLevel: 'debug',
+        auth0: {
+          domain: 'injected.auth0.com',
+          audience: 'https://injected.api.com',
+          clientId: 'injected-client',
+        },
+        m2mClientSecret: 'injected-secret',
+        otelEndpoint: 'http://injected-otel:4318',
+      };
+      setConfig(customConfig);
+      const retrieved = getConfig();
+      expect(retrieved).toBe(customConfig);
+      expect(retrieved.port).toBe(9999);
+      expect(retrieved.host).toBe('injected.host');
+      expect(retrieved.transport).toBe('stdio');
+      expect(retrieved.statelessMode).toBe(true);
+      expect(retrieved.debug).toBe(true);
+      expect(retrieved.logLevel).toBe('debug');
+    });
+
+    it('should override previously loaded config', () => {
+      process.env['MCP_PORT'] = '4000';
+      const loaded = getConfig();
+      expect(loaded.port).toBe(4000);
+
+      const injected: Config = {
+        ...loaded,
+        port: 8888,
+        host: 'overridden.host',
+      };
+      setConfig(injected);
+      expect(getConfig().port).toBe(8888);
+      expect(getConfig().host).toBe('overridden.host');
+    });
+
+    it('should not be affected by process.env changes after setConfig', () => {
+      const customConfig: Config = {
+        port: 1234,
+        host: 'set-config.host',
+        transport: 'http',
+        statelessMode: false,
+        pageSize: 50,
+        maxPageSize: 200,
+        requestTimeoutMs: 60000,
+        shutdownTimeoutMs: 30000,
+        progressIntervalMs: 100,
+        debug: false,
+        logLevel: 'info',
+        auth0: {},
+        m2mClientSecret: undefined,
+        otelEndpoint: undefined,
+      };
+      setConfig(customConfig);
+      process.env['MCP_PORT'] = '5555';
+      process.env['MCP_HOST'] = 'env.host';
+      // getConfig should return the injected config, not reload from env
+      expect(getConfig().port).toBe(1234);
+      expect(getConfig().host).toBe('set-config.host');
     });
   });
 

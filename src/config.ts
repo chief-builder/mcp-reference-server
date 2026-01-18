@@ -66,27 +66,28 @@ function parseInteger(value: string | undefined): number | undefined {
 
 /**
  * Load configuration from environment variables
+ * @param env - Environment object to read from (defaults to process.env)
  */
-export function loadConfig(): Config {
+export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const rawConfig = {
-    port: parseInteger(process.env['MCP_PORT']),
-    host: process.env['MCP_HOST'] || undefined,
-    transport: process.env['MCP_TRANSPORT'] || undefined,
-    statelessMode: parseBoolean(process.env['MCP_STATELESS_MODE'], false),
-    pageSize: parseInteger(process.env['MCP_PAGINATION_DEFAULT']) ?? parseInteger(process.env['MCP_PAGE_SIZE']),
-    maxPageSize: parseInteger(process.env['MCP_PAGINATION_MAX']),
-    requestTimeoutMs: parseInteger(process.env['MCP_REQUEST_TIMEOUT_MS']),
-    shutdownTimeoutMs: parseInteger(process.env['MCP_SHUTDOWN_TIMEOUT_MS']),
-    progressIntervalMs: parseInteger(process.env['MCP_PROGRESS_INTERVAL_MS']),
-    debug: parseBoolean(process.env['MCP_DEBUG'], false),
-    logLevel: process.env['MCP_LOG_LEVEL'] || undefined,
+    port: parseInteger(env['MCP_PORT']),
+    host: env['MCP_HOST'] || undefined,
+    transport: env['MCP_TRANSPORT'] || undefined,
+    statelessMode: parseBoolean(env['MCP_STATELESS_MODE'], false),
+    pageSize: parseInteger(env['MCP_PAGINATION_DEFAULT']) ?? parseInteger(env['MCP_PAGE_SIZE']),
+    maxPageSize: parseInteger(env['MCP_PAGINATION_MAX']),
+    requestTimeoutMs: parseInteger(env['MCP_REQUEST_TIMEOUT_MS']),
+    shutdownTimeoutMs: parseInteger(env['MCP_SHUTDOWN_TIMEOUT_MS']),
+    progressIntervalMs: parseInteger(env['MCP_PROGRESS_INTERVAL_MS']),
+    debug: parseBoolean(env['MCP_DEBUG'], false),
+    logLevel: env['MCP_LOG_LEVEL'] || undefined,
     auth0: {
-      domain: process.env['MCP_AUTH0_DOMAIN'] || undefined,
-      audience: process.env['MCP_AUTH0_AUDIENCE'] || undefined,
-      clientId: process.env['MCP_AUTH0_CLIENT_ID'] || undefined,
+      domain: env['MCP_AUTH0_DOMAIN'] || undefined,
+      audience: env['MCP_AUTH0_AUDIENCE'] || undefined,
+      clientId: env['MCP_AUTH0_CLIENT_ID'] || undefined,
     },
-    m2mClientSecret: process.env['MCP_M2M_CLIENT_SECRET'] || undefined,
-    otelEndpoint: process.env['OTEL_EXPORTER_OTLP_ENDPOINT'] || undefined,
+    m2mClientSecret: env['MCP_M2M_CLIENT_SECRET'] || undefined,
+    otelEndpoint: env['OTEL_EXPORTER_OTLP_ENDPOINT'] || undefined,
   };
 
   // Clean auth0 object - remove undefined values
@@ -144,4 +145,12 @@ export function reloadConfig(): Config {
  */
 export function resetConfig(): void {
   config = null;
+}
+
+/**
+ * Set config directly (for testing)
+ * Allows tests to inject a specific configuration without modifying process.env
+ */
+export function setConfig(newConfig: Config): void {
+  config = newConfig;
 }
