@@ -35,10 +35,30 @@ const CursorDataSchema = z.object({
     checksum: z.string().min(1),
 });
 // =============================================================================
+// Cursor Secret Validation
+// =============================================================================
+/**
+ * Get cursor secret from environment variable with fail-closed validation.
+ * Throws at module load if secret is not set or is too short.
+ *
+ * @returns The cursor secret string
+ * @throws Error if MCP_CURSOR_SECRET is not set or is less than 32 characters
+ */
+export function getCursorSecret() {
+    const secret = process.env['MCP_CURSOR_SECRET'];
+    if (!secret) {
+        throw new Error('MCP_CURSOR_SECRET environment variable is required');
+    }
+    if (secret.length < 32) {
+        throw new Error('MCP_CURSOR_SECRET must be at least 32 characters');
+    }
+    return secret;
+}
+// =============================================================================
 // Cursor Creation and Parsing
 // =============================================================================
-/** Secret salt for cursor checksum (in production, use env variable) */
-const CURSOR_SECRET = process.env['MCP_CURSOR_SECRET'] ?? 'mcp-pagination-secret';
+/** Secret salt for cursor checksum - fail-fast validation at module load */
+const CURSOR_SECRET = getCursorSecret();
 /**
  * Generate checksum for cursor validation
  */

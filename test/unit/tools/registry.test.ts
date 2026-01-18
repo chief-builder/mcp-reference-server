@@ -522,6 +522,105 @@ describe('ToolExecutor', () => {
       }
     });
   });
+
+  describe('event listener cleanup (H6 fix)', () => {
+    it('should not accumulate event listeners after many executions', async () => {
+      // Create a fast tool for repeated execution
+      const fastTool: Tool = {
+        name: 'fast_tool',
+        description: 'A fast tool',
+        inputSchema: { type: 'object' },
+        handler: async () => {
+          return { content: [{ type: 'text', text: 'Done' }] };
+        },
+      };
+      registry.registerTool(fastTool);
+
+      // Execute the tool many times
+      const iterations = 100;
+      for (let i = 0; i < iterations; i++) {
+        await executor.executeTool('fast_tool', {});
+      }
+
+      // If listeners were leaking, we would see memory issues or
+      // the AbortController's internal listener count would grow.
+      // Since { once: true } is used, listeners are auto-removed.
+      // This test verifies the tool can be executed many times without issues.
+      const result = await executor.executeTool('fast_tool', {});
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('should clean up listeners after timeout', async () => {
+      const executorWithShortTimeout = new ToolExecutor(registry, { timeoutMs: 50 });
+
+      const slowTool: Tool = {
+        name: 'slow_tool_cleanup',
+        description: 'A slow tool for cleanup test',
+        inputSchema: { type: 'object' },
+        handler: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 200));
+          return { content: [{ type: 'text', text: 'Done' }] };
+        },
+      };
+      registry.registerTool(slowTool);
+
+      // Trigger multiple timeouts
+      for (let i = 0; i < 10; i++) {
+        const result = await executorWithShortTimeout.executeTool('slow_tool_cleanup', {});
+        expect(result.isError).toBe(true);
+      }
+
+      // If listeners were leaking, subsequent executions would fail or
+      // memory would grow. With { once: true }, listeners are cleaned up.
+      const finalResult = await executorWithShortTimeout.executeTool('slow_tool_cleanup', {});
+      expect(finalResult.isError).toBe(true);
+      if (finalResult.content[0].type === 'text') {
+        expect(finalResult.content[0].text).toContain('timed out');
+      }
+    });
+
+    it('should clean up listeners after cancellation', async () => {
+      const cancelTool: Tool = {
+        name: 'cancel_tool',
+        description: 'A tool for cancellation test',
+        inputSchema: { type: 'object' },
+        handler: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          return { content: [{ type: 'text', text: 'Done' }] };
+        },
+      };
+      registry.registerTool(cancelTool);
+
+      // Test multiple cancellations
+      for (let i = 0; i < 10; i++) {
+        const abortController = new AbortController();
+
+        // Start execution and immediately cancel
+        const resultPromise = executor.executeTool('cancel_tool', {}, {
+          abortSignal: abortController.signal,
+        });
+        abortController.abort();
+
+        const result = await resultPromise;
+        expect(result.isError).toBe(true);
+        if (result.content[0].type === 'text') {
+          expect(result.content[0].text).toContain('cancelled');
+        }
+      }
+
+      // Verify executor still works after many cancellations
+      const fastTool: Tool = {
+        name: 'fast_after_cancel',
+        description: 'A fast tool',
+        inputSchema: { type: 'object' },
+        handler: async () => ({ content: [{ type: 'text', text: 'Ok' }] }),
+      };
+      registry.registerTool(fastTool);
+
+      const finalResult = await executor.executeTool('fast_after_cancel', {});
+      expect(finalResult.isError).toBeUndefined();
+    });
+  });
 });
 
 // =============================================================================

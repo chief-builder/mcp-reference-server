@@ -7,6 +7,12 @@
 
 import { beforeAll, afterAll, vi } from 'vitest';
 
+// Set required environment variables before any modules load
+// MCP_CURSOR_SECRET requires at least 32 characters
+if (!process.env['MCP_CURSOR_SECRET']) {
+  process.env['MCP_CURSOR_SECRET'] = 'test-cursor-secret-must-be-32-chars-minimum';
+}
+
 // Store original console methods
 const originalConsole = {
   log: console.log,

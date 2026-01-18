@@ -295,14 +295,14 @@ export class ToolExecutor {
                 new Promise((_, reject) => {
                     timeoutController.signal.addEventListener('abort', () => {
                         reject(new Error('Tool execution timeout'));
-                    });
+                    }, { once: true });
                 }),
                 ...(context?.abortSignal
                     ? [
                         new Promise((_, reject) => {
                             context.abortSignal.addEventListener('abort', () => {
                                 reject(new Error('Tool execution cancelled'));
-                            });
+                            }, { once: true });
                         }),
                     ]
                     : []),

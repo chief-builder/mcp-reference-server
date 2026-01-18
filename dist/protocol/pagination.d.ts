@@ -40,6 +40,14 @@ export declare const PaginationParamsSchema: z.ZodOptional<z.ZodObject<{
     cursor?: string | undefined;
 }>>;
 /**
+ * Get cursor secret from environment variable with fail-closed validation.
+ * Throws at module load if secret is not set or is too short.
+ *
+ * @returns The cursor secret string
+ * @throws Error if MCP_CURSOR_SECRET is not set or is less than 32 characters
+ */
+export declare function getCursorSecret(): string;
+/**
  * Create an opaque cursor for pagination
  *
  * @param offset - Current position in the list
