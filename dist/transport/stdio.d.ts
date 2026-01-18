@@ -116,6 +116,7 @@ export declare class StdioTransport {
     /**
      * Handle incoming data from stdin.
      * Buffers partial lines and processes complete ones.
+     * Enforces MAX_LINE_LENGTH to prevent memory exhaustion.
      */
     private handleData;
     /**

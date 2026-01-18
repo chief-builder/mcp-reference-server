@@ -467,6 +467,78 @@ describe('StdioTransport', () => {
       expect(errorHandler).toHaveBeenCalledTimes(1);
       expect(errorHandler).toHaveBeenCalledWith(testError);
     });
+
+    it('should emit error when line exceeds 1MB limit', async () => {
+      const { createTransport, stdin } = createTestOptions();
+      const transport = createTransport();
+
+      const errorHandler = vi.fn();
+      const messageHandler = vi.fn();
+      transport.onError(errorHandler);
+      transport.onMessage(messageHandler);
+      transport.start();
+
+      // Create data larger than 1MB (1024 * 1024 bytes) without newline
+      const oversizedData = 'x'.repeat(1024 * 1024 + 1);
+      stdin.push(oversizedData);
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(errorHandler).toHaveBeenCalledTimes(1);
+      expect(errorHandler.mock.calls[0]?.[0]).toBeInstanceOf(Error);
+      expect(errorHandler.mock.calls[0]?.[0]?.message).toContain('Line exceeds maximum length');
+      expect(messageHandler).not.toHaveBeenCalled();
+    });
+
+    it('should recover after oversized line error and process subsequent messages', async () => {
+      const { createTransport, stdin } = createTestOptions();
+      const transport = createTransport();
+
+      const errorHandler = vi.fn();
+      const messageHandler = vi.fn();
+      transport.onError(errorHandler);
+      transport.onMessage(messageHandler);
+      transport.start();
+
+      // First, send oversized data without newline to trigger error
+      const oversizedData = 'x'.repeat(1024 * 1024 + 1);
+      stdin.push(oversizedData);
+
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(errorHandler).toHaveBeenCalledTimes(1);
+
+      // Now send a valid message - transport should recover
+      const validRequest = createRequest(1, 'tools/list');
+      stdin.push(JSON.stringify(validRequest) + '\n');
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(messageHandler).toHaveBeenCalledTimes(1);
+      expect(messageHandler).toHaveBeenCalledWith(validRequest);
+    });
+
+    it('should not trigger error for large complete messages with newline', async () => {
+      const { createTransport, stdin } = createTestOptions();
+      const transport = createTransport();
+
+      const errorHandler = vi.fn();
+      const messageHandler = vi.fn();
+      transport.onError(errorHandler);
+      transport.onMessage(messageHandler);
+      transport.start();
+
+      // Create valid JSON-RPC request with large params (but with newline terminator)
+      // This should process normally since there's a newline before hitting the limit
+      const request = createRequest(1, 'test', { data: 'y'.repeat(1000) });
+      stdin.push(JSON.stringify(request) + '\n');
+
+      await new Promise((resolve) => setImmediate(resolve));
+
+      // Should not have triggered the oversized line error
+      expect(errorHandler).not.toHaveBeenCalled();
+      expect(messageHandler).toHaveBeenCalledTimes(1);
+      expect(messageHandler).toHaveBeenCalledWith(request);
+    });
   });
 
   describe('stream end handling', () => {

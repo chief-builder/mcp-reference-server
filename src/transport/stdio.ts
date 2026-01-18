@@ -38,6 +38,7 @@ export type CloseHandler = () => void;
 
 const NEWLINE = '\n';
 const ENCODING = 'utf8' as const;
+const MAX_LINE_LENGTH = 1024 * 1024; // 1MB limit for buffered lines
 
 // =============================================================================
 // Custom Events with Type Safety
@@ -267,10 +268,19 @@ export class StdioTransport {
   /**
    * Handle incoming data from stdin.
    * Buffers partial lines and processes complete ones.
+   * Enforces MAX_LINE_LENGTH to prevent memory exhaustion.
    */
   private handleData(chunk: Buffer | string): void {
     const data = typeof chunk === 'string' ? chunk : chunk.toString(ENCODING);
     this.buffer += data;
+
+    // Check buffer size limit before finding newline to prevent memory exhaustion
+    if (this.buffer.length > MAX_LINE_LENGTH && this.buffer.indexOf(NEWLINE) === -1) {
+      this.errorEmitter.emit('error', new Error(`Line exceeds maximum length of ${MAX_LINE_LENGTH} bytes`));
+      this.buffer = '';
+      return;
+    }
+
     this.processBuffer();
   }
 
