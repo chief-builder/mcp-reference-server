@@ -9,7 +9,7 @@
  * - Auth0-compatible endpoints
  */
 import { z } from 'zod';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, timingSafeEqual as cryptoTimingSafeEqual } from 'node:crypto';
 import { generateCodeVerifier, generateCodeChallenge, base64UrlEncode } from './pkce.js';
 // =============================================================================
 // Constants
@@ -153,6 +153,7 @@ export function generateState() {
  * Validate that a received state matches the expected state.
  *
  * Uses timing-safe comparison to prevent timing attacks.
+ * Strings are padded to the same length to prevent length-based timing leakage.
  *
  * @param received - The state received in the callback
  * @param expected - The state stored from the original request
@@ -162,15 +163,19 @@ export function validateState(received, expected) {
     if (typeof received !== 'string' || typeof expected !== 'string') {
         return false;
     }
+    // Pad to same length to prevent length-based timing leakage
+    const maxLength = Math.max(received.length, expected.length);
+    const bufReceived = Buffer.alloc(maxLength, 0);
+    const bufExpected = Buffer.alloc(maxLength, 0);
+    bufReceived.write(received);
+    bufExpected.write(expected);
+    // Use constant-time comparison from node:crypto
+    // If lengths differ, still do the comparison to maintain constant time, but return false
     if (received.length !== expected.length) {
+        cryptoTimingSafeEqual(bufReceived, bufExpected);
         return false;
     }
-    // Timing-safe comparison
-    let result = 0;
-    for (let i = 0; i < received.length; i++) {
-        result |= received.charCodeAt(i) ^ expected.charCodeAt(i);
-    }
-    return result === 0;
+    return cryptoTimingSafeEqual(bufReceived, bufExpected);
 }
 // =============================================================================
 // URL Building

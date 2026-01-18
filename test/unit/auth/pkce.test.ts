@@ -421,6 +421,42 @@ describe('PKCE Implementation', () => {
       expect(result1).toBe(true);
       expect(result2).toBe(false);
     });
+
+    it('should handle timing-safe comparison for equal challenges', async () => {
+      const verifier = generateCodeVerifier();
+      const challenge = generateCodeChallenge(verifier);
+
+      // Verify multiple times to ensure consistent behavior
+      for (let i = 0; i < 10; i++) {
+        expect(await verifyCodeChallenge(verifier, challenge, 'S256')).toBe(true);
+      }
+    });
+
+    it('should handle timing-safe comparison for unequal challenges of same length', async () => {
+      const verifier = generateCodeVerifier();
+      const challenge = generateCodeChallenge(verifier);
+
+      // Create wrong challenges at different character positions
+      const wrongStart = 'X' + challenge.slice(1);
+      const wrongEnd = challenge.slice(0, -1) + 'X';
+      const wrongMiddle = challenge.slice(0, 20) + 'X' + challenge.slice(21);
+
+      expect(await verifyCodeChallenge(verifier, wrongStart, 'S256')).toBe(false);
+      expect(await verifyCodeChallenge(verifier, wrongEnd, 'S256')).toBe(false);
+      expect(await verifyCodeChallenge(verifier, wrongMiddle, 'S256')).toBe(false);
+    });
+
+    it('should handle timing-safe comparison for different length challenges', async () => {
+      const verifier = generateCodeVerifier();
+      const challenge = generateCodeChallenge(verifier);
+
+      // Challenges of different lengths
+      const shorterChallenge = challenge.slice(0, -5);
+      const longerChallenge = challenge + 'XXXXX';
+
+      expect(await verifyCodeChallenge(verifier, shorterChallenge, 'S256')).toBe(false);
+      expect(await verifyCodeChallenge(verifier, longerChallenge, 'S256')).toBe(false);
+    });
   });
 
   describe('Edge Cases', () => {

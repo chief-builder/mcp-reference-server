@@ -239,6 +239,7 @@ export declare function generateState(): string;
  * Validate that a received state matches the expected state.
  *
  * Uses timing-safe comparison to prevent timing attacks.
+ * Strings are padded to the same length to prevent length-based timing leakage.
  *
  * @param received - The state received in the callback
  * @param expected - The state stored from the original request

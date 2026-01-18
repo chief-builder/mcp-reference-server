@@ -2,7 +2,7 @@
  * PKCE (Proof Key for Code Exchange) implementation
  * Per OAuth 2.1 Section 4.1.1 and RFC 7636
  */
-import { randomBytes, createHash } from 'node:crypto';
+import { randomBytes, createHash, timingSafeEqual as cryptoTimingSafeEqual } from 'node:crypto';
 /**
  * Constants per OAuth 2.1 specification
  */
@@ -128,20 +128,23 @@ export async function verifyCodeChallenge(verifier, challenge, method = 'S256') 
     }
 }
 /**
- * Timing-safe string comparison to prevent timing attacks
+ * Timing-safe string comparison to prevent timing attacks.
+ * Strings are padded to the same length to prevent length-based timing leakage.
  */
 function timingSafeEqual(a, b) {
+    // Pad to same length to prevent length-based timing leakage
+    const maxLength = Math.max(a.length, b.length);
+    const bufA = Buffer.alloc(maxLength, 0);
+    const bufB = Buffer.alloc(maxLength, 0);
+    bufA.write(a);
+    bufB.write(b);
+    // Use constant-time comparison from node:crypto
+    // If lengths differ, still do the comparison to maintain constant time, but return false
     if (a.length !== b.length) {
+        cryptoTimingSafeEqual(bufA, bufB);
         return false;
     }
-    const bufA = Buffer.from(a);
-    const bufB = Buffer.from(b);
-    // Node.js crypto.timingSafeEqual requires same length buffers
-    let result = 0;
-    for (let i = 0; i < bufA.length; i++) {
-        result |= bufA[i] ^ bufB[i];
-    }
-    return result === 0;
+    return cryptoTimingSafeEqual(bufA, bufB);
 }
 /**
  * Legacy function for backward compatibility

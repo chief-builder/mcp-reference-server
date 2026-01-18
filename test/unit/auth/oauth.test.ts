@@ -332,6 +332,53 @@ describe('State Management', () => {
       expect(validateState(state, diffStart)).toBe(false);
       expect(validateState(state, diffEnd)).toBe(false);
     });
+
+    it('should handle equal strings correctly', () => {
+      const testStrings = [
+        'abc',
+        'a'.repeat(100),
+        'test-state-parameter-12345',
+        generateState(),
+      ];
+
+      for (const str of testStrings) {
+        expect(validateState(str, str)).toBe(true);
+      }
+    });
+
+    it('should handle unequal strings of same length correctly', () => {
+      expect(validateState('abc', 'abd')).toBe(false);
+      expect(validateState('test1', 'test2')).toBe(false);
+      expect(validateState('aaaa', 'aaab')).toBe(false);
+      expect(validateState('aaaa', 'baaa')).toBe(false);
+    });
+
+    it('should handle different length strings correctly', () => {
+      expect(validateState('short', 'much-longer-string')).toBe(false);
+      expect(validateState('much-longer-string', 'short')).toBe(false);
+      expect(validateState('', 'non-empty')).toBe(false);
+      expect(validateState('non-empty', '')).toBe(false);
+      expect(validateState('a', 'aa')).toBe(false);
+      expect(validateState('aaa', 'aa')).toBe(false);
+    });
+
+    it('should handle empty strings correctly', () => {
+      expect(validateState('', '')).toBe(true);
+    });
+
+    it('should use crypto.timingSafeEqual for constant-time comparison', () => {
+      // This test verifies the function works with the new implementation
+      // by testing various edge cases that rely on proper buffer handling
+      const state1 = 'test-state-value';
+      const state2 = 'test-state-value';
+      const state3 = 'different-state!';
+
+      // Equal states should match
+      expect(validateState(state1, state2)).toBe(true);
+
+      // Different states of same length should not match
+      expect(validateState(state1, state3)).toBe(false);
+    });
   });
 });
 
