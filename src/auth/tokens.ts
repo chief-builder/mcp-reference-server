@@ -11,6 +11,7 @@
  */
 
 import { z } from 'zod';
+import { createRemoteJWKSet, jwtVerify, JWTPayload } from 'jose';
 import { OAuthClient, NormalizedTokenResponse, OAuthError } from './oauth.js';
 
 // =============================================================================
@@ -22,6 +23,16 @@ const DEFAULT_EXPIRY_BUFFER_SECONDS = 60;
 
 /** Default resource key for tokens without resource indicator */
 const DEFAULT_RESOURCE_KEY = '__default__';
+
+// =============================================================================
+// JWKS Cache
+// =============================================================================
+
+/**
+ * Cache for JWKS remote key sets.
+ * Jose handles automatic key refresh internally, so no TTL management is needed.
+ */
+const jwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
 // =============================================================================
 // Zod Schemas
@@ -128,6 +139,16 @@ export interface TokenRefreshResult {
   error?: string | undefined;
 }
 
+/** Options for JWT signature verification */
+export interface JwtVerifyOptions {
+  /** JWKS URI to fetch public keys from */
+  jwksUri: string;
+  /** Expected issuer claim */
+  issuer?: string;
+  /** Expected audience claim */
+  audience?: string;
+}
+
 // =============================================================================
 // Error Classes
 // =============================================================================
@@ -175,6 +196,16 @@ export class TokenRefreshError extends TokenError {
   constructor(message = 'Token refresh failed') {
     super('refresh_failed', message);
     this.name = 'TokenRefreshError';
+  }
+}
+
+/**
+ * JWT signature verification error
+ */
+export class JwtSignatureError extends TokenError {
+  constructor(message = 'JWT signature verification failed') {
+    super('signature_invalid', message);
+    this.name = 'JwtSignatureError';
   }
 }
 
@@ -378,9 +409,10 @@ export class TokenManager {
   /**
    * Validate a JWT token format and optionally verify claims.
    *
-   * Note: This does NOT verify the signature. For production use,
-   * signature verification should be done using the authorization
-   * server's public keys.
+   * WARNING: This method does NOT verify the cryptographic signature of the JWT.
+   * It only validates the structure and claims. For production use where security
+   * is critical, use the standalone `verifyJwt()` function which performs full
+   * signature verification using JWKS.
    *
    * @param token - The JWT token string
    * @param options - Validation options
@@ -677,4 +709,90 @@ export async function refreshAccessToken(
     result.refreshToken = data.refresh_token;
   }
   return result;
+}
+
+/**
+ * Verify a JWT token's signature and claims using JWKS.
+ *
+ * This function performs full cryptographic signature verification by fetching
+ * the public keys from the JWKS URI. It also validates expiration, issuer, and
+ * audience claims.
+ *
+ * The JWKS is cached per URI, and jose handles automatic key refresh internally.
+ *
+ * @param token - The JWT token string to verify
+ * @param options - Verification options including JWKS URI and expected claims
+ * @returns The decoded and verified JWT payload
+ * @throws {JwtSignatureError} If signature verification fails
+ * @throws {TokenExpiredError} If the token has expired
+ * @throws {TokenValidationError} If claims validation fails (wrong issuer/audience)
+ *
+ * @example
+ * ```typescript
+ * const payload = await verifyJwt(token, {
+ *   jwksUri: 'https://auth.example.com/.well-known/jwks.json',
+ *   issuer: 'https://auth.example.com/',
+ *   audience: 'https://api.example.com',
+ * });
+ * ```
+ */
+export async function verifyJwt(token: string, options: JwtVerifyOptions): Promise<JWTPayload> {
+  // Get or create cached JWKS
+  let jwks = jwksCache.get(options.jwksUri);
+  if (!jwks) {
+    jwks = createRemoteJWKSet(new URL(options.jwksUri));
+    jwksCache.set(options.jwksUri, jwks);
+  }
+
+  try {
+    // Build verification options, only including defined values
+    const verifyOptions: { issuer?: string; audience?: string } = {};
+    if (options.issuer !== undefined) {
+      verifyOptions.issuer = options.issuer;
+    }
+    if (options.audience !== undefined) {
+      verifyOptions.audience = options.audience;
+    }
+
+    const { payload } = await jwtVerify(token, jwks, verifyOptions);
+
+    return payload;
+  } catch (error) {
+    // Handle specific jose errors and map to our error types
+    if (error instanceof Error) {
+      const message = error.message.toLowerCase();
+
+      // Check for expiration errors
+      if (message.includes('exp') || message.includes('expired')) {
+        throw new TokenExpiredError('Token has expired');
+      }
+
+      // Check for signature errors
+      if (
+        message.includes('signature') ||
+        message.includes('jws') ||
+        message.includes('verification failed')
+      ) {
+        throw new JwtSignatureError('JWT signature verification failed');
+      }
+
+      // Check for issuer/audience validation errors
+      if (message.includes('issuer') || message.includes('audience') || message.includes('iss') || message.includes('aud')) {
+        throw new TokenValidationError(error.message);
+      }
+
+      // Re-throw with more context
+      throw new TokenValidationError(`JWT verification failed: ${error.message}`);
+    }
+
+    throw new TokenValidationError('JWT verification failed');
+  }
+}
+
+/**
+ * Clear the JWKS cache (useful for testing).
+ * @internal
+ */
+export function clearJwksCache(): void {
+  jwksCache.clear();
 }

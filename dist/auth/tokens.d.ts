@@ -10,6 +10,7 @@
  * - Integration with OAuthClient for refresh operations
  */
 import { z } from 'zod';
+import { JWTPayload } from 'jose';
 import { OAuthClient, NormalizedTokenResponse } from './oauth.js';
 export declare const TokenPayloadSchema: z.ZodObject<{
     /** Subject identifier */
@@ -195,6 +196,15 @@ export interface TokenRefreshResult {
     /** Error message (if failed) */
     error?: string | undefined;
 }
+/** Options for JWT signature verification */
+export interface JwtVerifyOptions {
+    /** JWKS URI to fetch public keys from */
+    jwksUri: string;
+    /** Expected issuer claim */
+    issuer?: string;
+    /** Expected audience claim */
+    audience?: string;
+}
 /**
  * Token-specific error
  */
@@ -218,6 +228,12 @@ export declare class TokenValidationError extends TokenError {
  * Token refresh error
  */
 export declare class TokenRefreshError extends TokenError {
+    constructor(message?: string);
+}
+/**
+ * JWT signature verification error
+ */
+export declare class JwtSignatureError extends TokenError {
     constructor(message?: string);
 }
 /**
@@ -316,9 +332,10 @@ export declare class TokenManager {
     /**
      * Validate a JWT token format and optionally verify claims.
      *
-     * Note: This does NOT verify the signature. For production use,
-     * signature verification should be done using the authorization
-     * server's public keys.
+     * WARNING: This method does NOT verify the cryptographic signature of the JWT.
+     * It only validates the structure and claims. For production use where security
+     * is critical, use the standalone `verifyJwt()` function which performs full
+     * signature verification using JWKS.
      *
      * @param token - The JWT token string
      * @param options - Validation options
@@ -386,4 +403,35 @@ export declare function refreshAccessToken(refreshToken: string, tokenEndpoint: 
     accessToken: string;
     refreshToken?: string;
 }>;
+/**
+ * Verify a JWT token's signature and claims using JWKS.
+ *
+ * This function performs full cryptographic signature verification by fetching
+ * the public keys from the JWKS URI. It also validates expiration, issuer, and
+ * audience claims.
+ *
+ * The JWKS is cached per URI, and jose handles automatic key refresh internally.
+ *
+ * @param token - The JWT token string to verify
+ * @param options - Verification options including JWKS URI and expected claims
+ * @returns The decoded and verified JWT payload
+ * @throws {JwtSignatureError} If signature verification fails
+ * @throws {TokenExpiredError} If the token has expired
+ * @throws {TokenValidationError} If claims validation fails (wrong issuer/audience)
+ *
+ * @example
+ * ```typescript
+ * const payload = await verifyJwt(token, {
+ *   jwksUri: 'https://auth.example.com/.well-known/jwks.json',
+ *   issuer: 'https://auth.example.com/',
+ *   audience: 'https://api.example.com',
+ * });
+ * ```
+ */
+export declare function verifyJwt(token: string, options: JwtVerifyOptions): Promise<JWTPayload>;
+/**
+ * Clear the JWKS cache (useful for testing).
+ * @internal
+ */
+export declare function clearJwksCache(): void;
 //# sourceMappingURL=tokens.d.ts.map

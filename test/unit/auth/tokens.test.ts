@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vitest';
+import * as jose from 'jose';
 import {
   // Schemas
   TokenPayloadSchema,
@@ -10,17 +11,21 @@ import {
   TokenValidationOptions,
   IntrospectionResponse,
   StoredToken,
+  JwtVerifyOptions,
   // Error classes
   TokenError,
   TokenExpiredError,
   TokenValidationError,
   TokenRefreshError,
+  JwtSignatureError,
   // Main class
   TokenManager,
   // Standalone functions
   isTokenExpired,
   validateAccessToken,
   refreshAccessToken,
+  verifyJwt,
+  clearJwksCache,
 } from '../../../src/auth/tokens.js';
 import { OAuthClient, NormalizedTokenResponse } from '../../../src/auth/oauth.js';
 
@@ -1158,5 +1163,220 @@ describe('Security', () => {
 
       expect(() => manager.validateJwtFormat(expiredJwt, options)).toThrow(TokenExpiredError);
     });
+  });
+});
+
+// =============================================================================
+// verifyJwt Tests
+// =============================================================================
+
+describe('verifyJwt', () => {
+  const JWKS_URI = 'https://test.auth0.com/.well-known/jwks.json';
+  const ISSUER = 'https://test.auth0.com/';
+  const AUDIENCE = 'https://api.example.com';
+
+  // Generate test key pair and signed JWTs
+  let privateKey: jose.KeyLike;
+  let publicKey: jose.KeyLike;
+  let validSignedJwt: string;
+  let expiredSignedJwt: string;
+  let wrongIssuerJwt: string;
+  let wrongAudienceJwt: string;
+
+  beforeAll(async () => {
+    // Generate RS256 key pair for testing
+    const keyPair = await jose.generateKeyPair('RS256');
+    privateKey = keyPair.privateKey;
+    publicKey = keyPair.publicKey;
+
+    // Create a valid signed JWT
+    validSignedJwt = await new jose.SignJWT({
+      sub: 'user-123',
+      scope: 'openid profile',
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: 'test-key-1' })
+      .setIssuedAt()
+      .setIssuer(ISSUER)
+      .setAudience(AUDIENCE)
+      .setExpirationTime('1h')
+      .sign(privateKey);
+
+    // Create an expired JWT
+    expiredSignedJwt = await new jose.SignJWT({
+      sub: 'user-123',
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: 'test-key-1' })
+      .setIssuedAt(Math.floor(Date.now() / 1000) - 7200) // 2 hours ago
+      .setIssuer(ISSUER)
+      .setAudience(AUDIENCE)
+      .setExpirationTime(Math.floor(Date.now() / 1000) - 3600) // Expired 1 hour ago
+      .sign(privateKey);
+
+    // Create JWT with wrong issuer
+    wrongIssuerJwt = await new jose.SignJWT({
+      sub: 'user-123',
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: 'test-key-1' })
+      .setIssuedAt()
+      .setIssuer('https://wrong-issuer.com/')
+      .setAudience(AUDIENCE)
+      .setExpirationTime('1h')
+      .sign(privateKey);
+
+    // Create JWT with wrong audience
+    wrongAudienceJwt = await new jose.SignJWT({
+      sub: 'user-123',
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: 'test-key-1' })
+      .setIssuedAt()
+      .setIssuer(ISSUER)
+      .setAudience('https://wrong-audience.com')
+      .setExpirationTime('1h')
+      .sign(privateKey);
+  });
+
+  beforeEach(() => {
+    clearJwksCache();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe('jose library behavior verification', () => {
+    // These tests verify that jose library correctly handles various scenarios
+    // This validates the behavior we depend on in verifyJwt()
+
+    it('should verify a valid JWT with correct signature', async () => {
+      const { payload } = await jose.jwtVerify(validSignedJwt, publicKey, {
+        issuer: ISSUER,
+        audience: AUDIENCE,
+      });
+
+      expect(payload.sub).toBe('user-123');
+      expect(payload.iss).toBe(ISSUER);
+      expect(payload.aud).toBe(AUDIENCE);
+    });
+
+    it('should verify JWT without issuer/audience validation', async () => {
+      const { payload } = await jose.jwtVerify(validSignedJwt, publicKey);
+
+      expect(payload.sub).toBe('user-123');
+    });
+
+    it('should throw for token with invalid signature', async () => {
+      const otherKeyPair = await jose.generateKeyPair('RS256');
+
+      await expect(
+        jose.jwtVerify(validSignedJwt, otherKeyPair.publicKey, {
+          issuer: ISSUER,
+          audience: AUDIENCE,
+        })
+      ).rejects.toThrow();
+    });
+
+    it('should throw for malformed JWT', async () => {
+      await expect(
+        jose.jwtVerify('not.a.valid.jwt', publicKey)
+      ).rejects.toThrow();
+    });
+
+    it('should throw for expired JWT', async () => {
+      await expect(
+        jose.jwtVerify(expiredSignedJwt, publicKey, {
+          issuer: ISSUER,
+          audience: AUDIENCE,
+        })
+      ).rejects.toThrow();
+    });
+
+    it('should throw for JWT with wrong issuer', async () => {
+      await expect(
+        jose.jwtVerify(wrongIssuerJwt, publicKey, {
+          issuer: ISSUER,
+          audience: AUDIENCE,
+        })
+      ).rejects.toThrow();
+    });
+
+    it('should throw for JWT with wrong audience', async () => {
+      await expect(
+        jose.jwtVerify(wrongAudienceJwt, publicKey, {
+          issuer: ISSUER,
+          audience: AUDIENCE,
+        })
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('verifyJwt function exports and types', () => {
+    it('should export verifyJwt function', () => {
+      expect(verifyJwt).toBeDefined();
+      expect(typeof verifyJwt).toBe('function');
+    });
+
+    it('should export clearJwksCache function', () => {
+      expect(clearJwksCache).toBeDefined();
+      expect(typeof clearJwksCache).toBe('function');
+    });
+
+    it('should export JwtVerifyOptions interface', () => {
+      // Type check - this verifies the interface exists and is usable
+      const options: JwtVerifyOptions = {
+        jwksUri: JWKS_URI,
+        issuer: ISSUER,
+        audience: AUDIENCE,
+      };
+      expect(options.jwksUri).toBe(JWKS_URI);
+    });
+
+    it('clearJwksCache should not throw', () => {
+      expect(() => clearJwksCache()).not.toThrow();
+    });
+  });
+
+  describe('error classes', () => {
+    it('JwtSignatureError should have correct properties', () => {
+      const error = new JwtSignatureError('test message');
+      expect(error.code).toBe('signature_invalid');
+      expect(error.name).toBe('JwtSignatureError');
+      expect(error.message).toBe('test message');
+    });
+
+    it('JwtSignatureError should have default message', () => {
+      const error = new JwtSignatureError();
+      expect(error.message).toBe('JWT signature verification failed');
+    });
+
+    it('TokenExpiredError should work for expired tokens', () => {
+      const error = new TokenExpiredError('Token has expired');
+      expect(error.code).toBe('token_expired');
+      expect(error.name).toBe('TokenExpiredError');
+    });
+
+    it('TokenValidationError should work for validation failures', () => {
+      const error = new TokenValidationError('Invalid issuer');
+      expect(error.code).toBe('token_invalid');
+      expect(error.name).toBe('TokenValidationError');
+    });
+  });
+});
+
+// =============================================================================
+// JwtSignatureError Tests
+// =============================================================================
+
+describe('JwtSignatureError', () => {
+  it('should have correct defaults', () => {
+    const error = new JwtSignatureError();
+    expect(error.code).toBe('signature_invalid');
+    expect(error.message).toBe('JWT signature verification failed');
+    expect(error.name).toBe('JwtSignatureError');
+  });
+
+  it('should accept custom message', () => {
+    const error = new JwtSignatureError('Custom signature error');
+    expect(error.message).toBe('Custom signature error');
+    expect(error.code).toBe('signature_invalid');
   });
 });
