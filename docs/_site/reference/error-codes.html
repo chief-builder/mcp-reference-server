@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Error Codes | MCP Reference Server</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Error Codes" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<meta property="og:description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<link rel="canonical" href="http://localhost:4000/reference/error-codes.html" />
+<meta property="og:url" content="http://localhost:4000/reference/error-codes.html" />
+<meta property="og:site_name" content="MCP Reference Server" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Error Codes" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification","headline":"Error Codes","url":"http://localhost:4000/reference/error-codes.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=4084654cb939e8940665a91c4c56b28d8f437143">
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="http://localhost:4000/">MCP Reference Server</a></h1>
+
+        
+
+        <p>A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification</p>
+
+        
+        <p class="view"><a href="https://github.com/chiefbuilder/mcp-reference-server">View the Project on GitHub <small>chiefbuilder/mcp-reference-server</small></a></p>
+        
+
+        
+
+        
+      </header>
+      <section>
+
+      <h1 id="error-codes-reference">Error Codes Reference</h1>
+
+<p>Complete list of JSON-RPC and MCP error codes.</p>
+
+<h2 id="json-rpc-20-standard-errors">JSON-RPC 2.0 Standard Errors</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Code</th>
+      <th>Name</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-32700</code></td>
+      <td>Parse Error</td>
+      <td>Invalid JSON received</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-32600</code></td>
+      <td>Invalid Request</td>
+      <td>JSON is not a valid Request object</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-32601</code></td>
+      <td>Method Not Found</td>
+      <td>Method does not exist</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-32602</code></td>
+      <td>Invalid Params</td>
+      <td>Invalid method parameters</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-32603</code></td>
+      <td>Internal Error</td>
+      <td>Internal JSON-RPC error</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="server-error-range">Server Error Range</h3>
+
+<p>Codes from <code class="language-plaintext highlighter-rouge">-32000</code> to <code class="language-plaintext highlighter-rouge">-32099</code> are reserved for implementation-defined server errors.</p>
+
+<h2 id="mcp-specific-errors">MCP-Specific Errors</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Code</th>
+      <th>Name</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-32800</code></td>
+      <td>Request Cancelled</td>
+      <td>Request was cancelled by client</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-32801</code></td>
+      <td>Content Too Large</td>
+      <td>Content exceeds maximum size</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="error-classes">Error Classes</h2>
+
+<p>The server provides error classes for each error type:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span>
+  <span class="nx">ParseError</span><span class="p">,</span>
+  <span class="nx">InvalidRequestError</span><span class="p">,</span>
+  <span class="nx">MethodNotFoundError</span><span class="p">,</span>
+  <span class="nx">InvalidParamsError</span><span class="p">,</span>
+  <span class="nx">InternalError</span><span class="p">,</span>
+  <span class="nx">RequestCancelledError</span><span class="p">,</span>
+  <span class="nx">ContentTooLargeError</span><span class="p">,</span>
+<span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="c1">// Create errors</span>
+<span class="k">throw</span> <span class="k">new</span> <span class="nx">ParseError</span><span class="p">();</span>
+<span class="k">throw</span> <span class="k">new</span> <span class="nx">InvalidRequestError</span><span class="p">(</span><span class="dl">'</span><span class="s1">Missing required field</span><span class="dl">'</span><span class="p">);</span>
+<span class="k">throw</span> <span class="k">new</span> <span class="nx">MethodNotFoundError</span><span class="p">(</span><span class="dl">'</span><span class="s1">tools/unknown</span><span class="dl">'</span><span class="p">);</span>
+<span class="k">throw</span> <span class="k">new</span> <span class="nx">InvalidParamsError</span><span class="p">(</span><span class="dl">'</span><span class="s1">Invalid name format</span><span class="dl">'</span><span class="p">,</span> <span class="p">{</span> <span class="na">field</span><span class="p">:</span> <span class="dl">'</span><span class="s1">name</span><span class="dl">'</span> <span class="p">});</span>
+<span class="k">throw</span> <span class="k">new</span> <span class="nx">InternalError</span><span class="p">(</span><span class="dl">'</span><span class="s1">Database connection failed</span><span class="dl">'</span><span class="p">);</span>
+<span class="k">throw</span> <span class="k">new</span> <span class="nx">RequestCancelledError</span><span class="p">(</span><span class="dl">'</span><span class="s1">req-123</span><span class="dl">'</span><span class="p">);</span>
+<span class="k">throw</span> <span class="k">new</span> <span class="nx">ContentTooLargeError</span><span class="p">(</span><span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">,</span> <span class="mi">512</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">);</span>
+</code></pre></div></div>
+
+<h2 id="factory-functions">Factory Functions</h2>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span>
+  <span class="nx">createParseError</span><span class="p">,</span>
+  <span class="nx">createInvalidRequest</span><span class="p">,</span>
+  <span class="nx">createMethodNotFound</span><span class="p">,</span>
+  <span class="nx">createInvalidParams</span><span class="p">,</span>
+  <span class="nx">createInternalError</span><span class="p">,</span>
+<span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">error</span> <span class="o">=</span> <span class="nx">createMethodNotFound</span><span class="p">(</span><span class="dl">'</span><span class="s1">tools/missing</span><span class="dl">'</span><span class="p">);</span>
+</code></pre></div></div>
+
+<h2 id="error-response-format">Error Response Format</h2>
+
+<p>JSON-RPC error responses follow this format:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"jsonrpc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"error"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"code"</span><span class="p">:</span><span class="w"> </span><span class="mi">-32601</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Method not found: tools/missing"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"method"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tools/missing"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h2 id="tool-execution-errors-sep-1303">Tool Execution Errors (SEP-1303)</h2>
+
+<p>Tool errors are different from protocol errors. Per SEP-1303, tool validation and execution errors are returned as tool results with <code class="language-plaintext highlighter-rouge">isError: true</code>, not as JSON-RPC errors:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">createToolErrorResult</span><span class="p">,</span> <span class="nx">ToolExecutionError</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="c1">// Create tool error result</span>
+<span class="kd">const</span> <span class="nx">result</span> <span class="o">=</span> <span class="nx">createToolErrorResult</span><span class="p">(</span>
+  <span class="dl">'</span><span class="s1">File not found</span><span class="dl">'</span><span class="p">,</span>
+  <span class="dl">'</span><span class="s1">read_file</span><span class="dl">'</span><span class="p">,</span>
+  <span class="p">{</span> <span class="na">path</span><span class="p">:</span> <span class="dl">'</span><span class="s1">/missing.txt</span><span class="dl">'</span> <span class="p">}</span>
+<span class="p">);</span>
+<span class="c1">// Returns: { content: [...], isError: true }</span>
+
+<span class="c1">// Or throw and convert</span>
+<span class="k">try</span> <span class="p">{</span>
+  <span class="k">throw</span> <span class="k">new</span> <span class="nx">ToolExecutionError</span><span class="p">(</span><span class="dl">'</span><span class="s1">read_file</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">File not found</span><span class="dl">'</span><span class="p">);</span>
+<span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nx">e</span> <span class="k">instanceof</span> <span class="nx">ToolExecutionError</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">e</span><span class="p">.</span><span class="nx">toToolResult</span><span class="p">();</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="why-tool-errors-differ">Why Tool Errors Differ</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Protocol Error</th>
+      <th>Tool Error</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>JSON-RPC error response</td>
+      <td>Tool result with <code class="language-plaintext highlighter-rouge">isError: true</code></td>
+    </tr>
+    <tr>
+      <td>Stops processing</td>
+      <td>Allows LLM self-correction</td>
+    </tr>
+    <tr>
+      <td>Invalid request/params</td>
+      <td>Tool-specific failure</td>
+    </tr>
+    <tr>
+      <td>Client bug</td>
+      <td>Expected runtime condition</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="type-guards">Type Guards</h2>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span>
+  <span class="nx">isMcpError</span><span class="p">,</span>
+  <span class="nx">isParseError</span><span class="p">,</span>
+  <span class="nx">isInvalidRequestError</span><span class="p">,</span>
+  <span class="nx">isMethodNotFoundError</span><span class="p">,</span>
+  <span class="nx">isInvalidParamsError</span><span class="p">,</span>
+  <span class="nx">isInternalError</span><span class="p">,</span>
+  <span class="nx">isToolExecutionError</span><span class="p">,</span>
+  <span class="nx">isServerErrorCode</span><span class="p">,</span>
+  <span class="nx">isStandardErrorCode</span><span class="p">,</span>
+<span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="nx">isMcpError</span><span class="p">(</span><span class="nx">error</span><span class="p">))</span> <span class="p">{</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">error</span><span class="p">.</span><span class="nx">code</span><span class="p">,</span> <span class="nx">error</span><span class="p">.</span><span class="nx">message</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="nx">isServerErrorCode</span><span class="p">(</span><span class="o">-</span><span class="mi">32050</span><span class="p">))</span> <span class="p">{</span>
+  <span class="c1">// Custom server error</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="converting-errors">Converting Errors</h2>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">fromError</span><span class="p">,</span> <span class="nx">toErrorResponse</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="k">try</span> <span class="p">{</span>
+  <span class="c1">// Some operation</span>
+<span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// Convert any error to McpError</span>
+  <span class="kd">const</span> <span class="nx">mcpError</span> <span class="o">=</span> <span class="nx">fromError</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+
+  <span class="c1">// Create JSON-RPC response</span>
+  <span class="kd">const</span> <span class="nx">response</span> <span class="o">=</span> <span class="nx">toErrorResponse</span><span class="p">(</span><span class="nx">mcpError</span><span class="p">,</span> <span class="nx">requestId</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="http-status-codes">HTTP Status Codes</h2>
+
+<p>When using HTTP transport, errors map to HTTP status codes:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Error Code</th>
+      <th>HTTP Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-32700</code> Parse Error</td>
+      <td>400 Bad Request</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-32600</code> Invalid Request</td>
+      <td>400 Bad Request</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-32601</code> Method Not Found</td>
+      <td>404 Not Found</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-32602</code> Invalid Params</td>
+      <td>400 Bad Request</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-32603</code> Internal Error</td>
+      <td>500 Internal Server Error</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-32800</code> Cancelled</td>
+      <td>499 Client Closed Request</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">-32801</code> Content Too Large</td>
+      <td>413 Payload Too Large</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="related">Related</h2>
+
+<ul>
+  <li><a href="../guides/protocol">Protocol Guide</a> - Protocol concepts</li>
+  <li><a href="../guides/tools">Tools Guide</a> - Tool error handling</li>
+  <li><a href="../api/protocol">API Reference</a> - Error exports</li>
+</ul>
+
+
+<hr>
+
+<div class="nav-footer">
+  <p><strong>Navigation:</strong>
+    <a href="/">Home</a> |
+    <a href="/getting-started/installation">Getting Started</a> |
+    <a href="/guides/protocol">Guides</a> |
+    <a href="/api/protocol">API Reference</a> |
+    <a href="/examples/stdio-server">Examples</a> |
+    <a href="/reference/environment">Reference</a>
+  </p>
+</div>
+
+
+
+      </section>
+      <footer>
+        
+        <p>This project is maintained by <a href="https://github.com/chiefbuilder">chiefbuilder</a></p>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="/assets/js/scale.fix.js"></script>
+  </body>
+</html>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Protocol Guide | MCP Reference Server</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Protocol Guide" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<meta property="og:description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<link rel="canonical" href="http://localhost:4000/guides/protocol.html" />
+<meta property="og:url" content="http://localhost:4000/guides/protocol.html" />
+<meta property="og:site_name" content="MCP Reference Server" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Protocol Guide" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification","headline":"Protocol Guide","url":"http://localhost:4000/guides/protocol.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=4084654cb939e8940665a91c4c56b28d8f437143">
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="http://localhost:4000/">MCP Reference Server</a></h1>
+
+        
+
+        <p>A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification</p>
+
+        
+        <p class="view"><a href="https://github.com/chiefbuilder/mcp-reference-server">View the Project on GitHub <small>chiefbuilder/mcp-reference-server</small></a></p>
+        
+
+        
+
+        
+      </header>
+      <section>
+
+      <h1 id="protocol-guide">Protocol Guide</h1>
+
+<p>The Model Context Protocol (MCP) uses JSON-RPC 2.0 for communication between clients and servers.</p>
+
+<h2 id="message-format">Message Format</h2>
+
+<p>All messages follow the JSON-RPC 2.0 specification:</p>
+
+<h3 id="request">Request</h3>
+
+<p>Example calling the <code class="language-plaintext highlighter-rouge">tell_fortune</code> tool from this server:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"jsonrpc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"method"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tools/call"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tell_fortune"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"arguments"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"category"</span><span class="p">:</span><span class="w"> </span><span class="s2">"career"</span><span class="p">,</span><span class="w"> </span><span class="nl">"mood"</span><span class="p">:</span><span class="w"> </span><span class="s2">"optimistic"</span><span class="w"> </span><span class="p">}</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h3 id="response">Response</h3>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"jsonrpc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"result"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"content"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"text"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"text"</span><span class="p">:</span><span class="w"> </span><span class="s2">"{</span><span class="se">\"</span><span class="s2">category</span><span class="se">\"</span><span class="s2">:</span><span class="se">\"</span><span class="s2">career</span><span class="se">\"</span><span class="s2">,</span><span class="se">\"</span><span class="s2">mood</span><span class="se">\"</span><span class="s2">:</span><span class="se">\"</span><span class="s2">optimistic</span><span class="se">\"</span><span class="s2">,</span><span class="se">\"</span><span class="s2">fortune</span><span class="se">\"</span><span class="s2">:</span><span class="se">\"</span><span class="s2">Your dedication will be recognized soon.</span><span class="se">\"</span><span class="s2">}"</span><span class="w">
+    </span><span class="p">}]</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h3 id="notification">Notification</h3>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"jsonrpc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"method"</span><span class="p">:</span><span class="w"> </span><span class="s2">"notifications/initialized"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h2 id="lifecycle-states">Lifecycle States</h2>
+
+<p>The server transitions through these states:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>uninitialized → initializing → ready → shutting_down
+</code></pre></div></div>
+
+<table>
+  <thead>
+    <tr>
+      <th>State</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">uninitialized</code></td>
+      <td>Server started, awaiting <code class="language-plaintext highlighter-rouge">initialize</code> request</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">initializing</code></td>
+      <td>Received <code class="language-plaintext highlighter-rouge">initialize</code>, awaiting <code class="language-plaintext highlighter-rouge">initialized</code> notification</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">ready</code></td>
+      <td>Fully operational, handling requests</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">shutting_down</code></td>
+      <td>Shutdown initiated, rejecting new requests</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="initialization-handshake">Initialization Handshake</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Client                    Server
+   |                         |
+   |-- initialize ---------&gt; |  (state: uninitialized → initializing)
+   |&lt;-------- result --------|
+   |                         |
+   |-- notifications/initialized --&gt;|  (state: initializing → ready)
+   |                         |
+   |&lt;-- tools/list ---------&gt;|  (normal operations)
+</code></pre></div></div>
+
+<h3 id="initialize-request">Initialize Request</h3>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"jsonrpc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"method"</span><span class="p">:</span><span class="w"> </span><span class="s2">"initialize"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"protocolVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2025-11-25"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"capabilities"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w">
+    </span><span class="nl">"clientInfo"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"test-client"</span><span class="p">,</span><span class="w"> </span><span class="nl">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.0.0"</span><span class="w"> </span><span class="p">}</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h3 id="initialize-response">Initialize Response</h3>
+
+<p>This server responds with:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"jsonrpc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"result"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"protocolVersion"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2025-11-25"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"capabilities"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"tools"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"listChanged"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">},</span><span class="w">
+      </span><span class="nl">"completions"</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"serverInfo"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"mcp-reference-server"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.0.0"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h2 id="capabilities">Capabilities</h2>
+
+<p>Capabilities determine available features for the session.</p>
+
+<h3 id="server-capabilities">Server Capabilities</h3>
+
+<p>This server advertises these capabilities:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Capabilities returned by this server</span>
+<span class="p">{</span>
+  <span class="nl">tools</span><span class="p">:</span> <span class="p">{</span> <span class="na">listChanged</span><span class="p">:</span> <span class="kc">true</span> <span class="p">},</span>
+  <span class="nx">completions</span><span class="p">:</span> <span class="p">{}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="supported-methods">Supported Methods</h2>
+
+<p>This server supports these methods:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">initialize</code></td>
+      <td>Initialize the connection</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">tools/list</code></td>
+      <td>List available tools</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">tools/call</code></td>
+      <td>Execute a tool</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">completion/complete</code></td>
+      <td>Get argument completions</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="error-codes">Error Codes</h2>
+
+<p>Standard JSON-RPC 2.0 error codes:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Code</th>
+      <th>Name</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>-32700</td>
+      <td>Parse error</td>
+      <td>Invalid JSON</td>
+    </tr>
+    <tr>
+      <td>-32600</td>
+      <td>Invalid Request</td>
+      <td>Not a valid Request object</td>
+    </tr>
+    <tr>
+      <td>-32601</td>
+      <td>Method not found</td>
+      <td>Method does not exist</td>
+    </tr>
+    <tr>
+      <td>-32602</td>
+      <td>Invalid params</td>
+      <td>Invalid method parameters</td>
+    </tr>
+    <tr>
+      <td>-32603</td>
+      <td>Internal error</td>
+      <td>Internal JSON-RPC error</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>See <a href="../reference/error-codes">Error Codes Reference</a> for MCP-specific codes.</p>
+
+<h2 id="related">Related</h2>
+
+<ul>
+  <li><a href="transports">Transports Guide</a> - Communication channels</li>
+  <li><a href="tools">Tools Guide</a> - Tool registration and calling</li>
+  <li><a href="../reference/error-codes">Error Codes Reference</a> - Complete error list</li>
+</ul>
+
+
+<hr>
+
+<div class="nav-footer">
+  <p><strong>Navigation:</strong>
+    <a href="/">Home</a> |
+    <a href="/getting-started/installation">Getting Started</a> |
+    <a href="/guides/protocol">Guides</a> |
+    <a href="/api/protocol">API Reference</a> |
+    <a href="/examples/stdio-server">Examples</a> |
+    <a href="/reference/environment">Reference</a>
+  </p>
+</div>
+
+
+
+      </section>
+      <footer>
+        
+        <p>This project is maintained by <a href="https://github.com/chiefbuilder">chiefbuilder</a></p>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="/assets/js/scale.fix.js"></script>
+  </body>
+</html>

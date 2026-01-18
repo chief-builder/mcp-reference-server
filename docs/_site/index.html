@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Home | MCP Reference Server</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Home" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<meta property="og:description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<link rel="canonical" href="http://localhost:4000/" />
+<meta property="og:url" content="http://localhost:4000/" />
+<meta property="og:site_name" content="MCP Reference Server" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Home" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","description":"A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification","headline":"Home","name":"MCP Reference Server","url":"http://localhost:4000/"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=4084654cb939e8940665a91c4c56b28d8f437143">
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="http://localhost:4000/">MCP Reference Server</a></h1>
+
+        
+
+        <p>A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification</p>
+
+        
+        <p class="view"><a href="https://github.com/chiefbuilder/mcp-reference-server">View the Project on GitHub <small>chiefbuilder/mcp-reference-server</small></a></p>
+        
+
+        
+
+        
+      </header>
+      <section>
+
+      <h1 id="mcp-reference-server">MCP Reference Server</h1>
+
+<p>A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification.</p>
+
+<h2 id="what-this-project-does">What This Project Does</h2>
+
+<p>This is a complete MCP server implementation with three example tools:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Tool</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">tell_fortune</code></td>
+      <td>Get mystical fortunes (categories: love, career, health, wealth, general)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">calculate</code></td>
+      <td>Perform arithmetic operations (add, subtract, multiply, divide)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">roll_dice</code></td>
+      <td>Roll dice using D&amp;D notation (e.g., “2d6+3”)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="features">Features</h2>
+
+<ul>
+  <li><strong>Full Protocol Support</strong>: JSON-RPC 2.0 message format with lifecycle management</li>
+  <li><strong>Dual Transport</strong>: stdio for CLI integration, HTTP/SSE for web applications</li>
+  <li><strong>Tools Framework</strong>: SEP-1303 annotations, execution control, auto-complete</li>
+  <li><strong>Observability</strong>: OpenTelemetry traces/metrics, structured logging, health endpoints</li>
+  <li><strong>Type Safety</strong>: Full TypeScript with Zod runtime validation</li>
+  <li><strong>1710 Tests</strong>: Comprehensive test coverage</li>
+</ul>
+
+<h2 id="quick-start">Quick Start</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Clone and install</span>
+git clone https://github.com/chiefbuilder/mcp-reference-server.git
+<span class="nb">cd </span>mcp-reference-server
+npm <span class="nb">install</span>
+
+<span class="c"># Run the server</span>
+npm run dev
+</code></pre></div></div>
+
+<p>Then call a tool:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"jsonrpc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"method"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tools/call"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tell_fortune"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"arguments"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"category"</span><span class="p">:</span><span class="w"> </span><span class="s2">"career"</span><span class="p">,</span><span class="w"> </span><span class="nl">"mood"</span><span class="p">:</span><span class="w"> </span><span class="s2">"optimistic"</span><span class="w"> </span><span class="p">}</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h2 id="documentation">Documentation</h2>
+
+<h3 id="getting-started">Getting Started</h3>
+<ul>
+  <li><a href="getting-started/installation">Installation</a> - Requirements and setup</li>
+  <li><a href="getting-started/quick-start">Quick Start</a> - Your first MCP server</li>
+  <li><a href="getting-started/configuration">Configuration</a> - Environment variables</li>
+</ul>
+
+<h3 id="guides">Guides</h3>
+<ul>
+  <li><a href="guides/protocol">Protocol</a> - JSON-RPC 2.0, lifecycle, capabilities</li>
+  <li><a href="guides/transports">Transports</a> - stdio vs HTTP, SSE, sessions</li>
+  <li><a href="guides/authentication">Authentication</a> - OAuth 2.1, PKCE, M2M</li>
+  <li><a href="guides/tools">Tools</a> - Creating custom tools</li>
+  <li><a href="guides/completions">Completions</a> - Argument auto-complete</li>
+  <li><a href="guides/observability">Observability</a> - Telemetry, metrics, health</li>
+</ul>
+
+<h3 id="api-reference">API Reference</h3>
+<ul>
+  <li><a href="api/protocol">Protocol</a> - Protocol module exports</li>
+  <li><a href="api/transport">Transport</a> - Transport module exports</li>
+  <li><a href="api/auth">Auth</a> - Auth module exports</li>
+  <li><a href="api/tools">Tools</a> - Tools module exports</li>
+  <li><a href="api/server">Server</a> - Server and config exports</li>
+</ul>
+
+<h3 id="examples">Examples</h3>
+<ul>
+  <li><a href="examples/stdio-server">stdio Server</a> - CLI transport example</li>
+  <li><a href="examples/http-server">HTTP Server</a> - HTTP transport example</li>
+  <li><a href="examples/custom-tool">Custom Tool</a> - Building tools</li>
+</ul>
+
+<h3 id="reference">Reference</h3>
+<ul>
+  <li><a href="reference/environment">Environment Variables</a> - All MCP_* variables</li>
+  <li><a href="reference/error-codes">Error Codes</a> - JSON-RPC and MCP errors</li>
+  <li><a href="reference/cli">CLI</a> - Command line usage</li>
+</ul>
+
+<h2 id="requirements">Requirements</h2>
+
+<ul>
+  <li>Node.js 20.0.0 or higher</li>
+  <li>TypeScript 5.6+ (for development)</li>
+</ul>
+
+<h2 id="external-references">External References</h2>
+
+<ul>
+  <li><a href="https://spec.modelcontextprotocol.io/">MCP Specification</a> - Official MCP specification</li>
+  <li><a href="https://github.com/modelcontextprotocol">MCP GitHub</a> - Official MCP repositories</li>
+  <li><a href="https://github.com/modelcontextprotocol/inspector">MCP Inspector</a> - Testing tool</li>
+</ul>
+
+<h2 id="license">License</h2>
+
+<p>MIT - This is a learning project for understanding the MCP protocol.</p>
+
+
+<hr>
+
+<div class="nav-footer">
+  <p><strong>Navigation:</strong>
+    <a href="/">Home</a> |
+    <a href="/getting-started/installation">Getting Started</a> |
+    <a href="/guides/protocol">Guides</a> |
+    <a href="/api/protocol">API Reference</a> |
+    <a href="/examples/stdio-server">Examples</a> |
+    <a href="/reference/environment">Reference</a>
+  </p>
+</div>
+
+
+
+      </section>
+      <footer>
+        
+        <p>This project is maintained by <a href="https://github.com/chiefbuilder">chiefbuilder</a></p>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="/assets/js/scale.fix.js"></script>
+  </body>
+</html>

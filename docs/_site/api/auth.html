@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Auth API | MCP Reference Server</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Auth API" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<meta property="og:description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<link rel="canonical" href="http://localhost:4000/api/auth.html" />
+<meta property="og:url" content="http://localhost:4000/api/auth.html" />
+<meta property="og:site_name" content="MCP Reference Server" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Auth API" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification","headline":"Auth API","url":"http://localhost:4000/api/auth.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=4084654cb939e8940665a91c4c56b28d8f437143">
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="http://localhost:4000/">MCP Reference Server</a></h1>
+
+        
+
+        <p>A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification</p>
+
+        
+        <p class="view"><a href="https://github.com/chiefbuilder/mcp-reference-server">View the Project on GitHub <small>chiefbuilder/mcp-reference-server</small></a></p>
+        
+
+        
+
+        
+      </header>
+      <section>
+
+      <h1 id="auth-api-reference">Auth API Reference</h1>
+
+<p>Exports for OAuth 2.1 authentication, PKCE, token handling, and metadata discovery.</p>
+
+<h2 id="oauth-validator-authoauth">OAuth Validator (<code class="language-plaintext highlighter-rouge">auth/oauth</code>)</h2>
+
+<h3 id="oauthvalidator-class">OAuthValidator Class</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nx">OAuthValidator</span> <span class="p">{</span>
+  <span class="kd">constructor</span><span class="p">(</span><span class="nx">options</span><span class="p">:</span> <span class="nx">OAuthValidatorOptions</span><span class="p">);</span>
+  <span class="nx">validate</span><span class="p">(</span><span class="nx">request</span><span class="p">:</span> <span class="nx">Request</span><span class="p">):</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">TokenInfo</span><span class="o">&gt;</span><span class="p">;</span>
+  <span class="nx">validateScopes</span><span class="p">(</span><span class="nx">tokenInfo</span><span class="p">:</span> <span class="nx">TokenInfo</span><span class="p">,</span> <span class="nx">requiredScopes</span><span class="p">:</span> <span class="kr">string</span><span class="p">[]):</span> <span class="k">void</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">OAuthValidatorOptions</span> <span class="p">{</span>
+  <span class="nl">issuer</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">audience</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">jwksUri</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">introspectionEndpoint</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">clientId</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">clientSecret</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">TokenInfo</span> <span class="p">{</span>
+  <span class="nl">sub</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">scope</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">exp</span><span class="p">:</span> <span class="kr">number</span><span class="p">;</span>
+  <span class="nl">iat</span><span class="p">:</span> <span class="kr">number</span><span class="p">;</span>
+  <span class="nl">iss</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">aud</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">client_id</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="usage">Usage</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">OAuthValidator</span><span class="p">,</span> <span class="nx">HttpTransport</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">validator</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">OAuthValidator</span><span class="p">({</span>
+  <span class="na">issuer</span><span class="p">:</span> <span class="dl">'</span><span class="s1">https://auth.example.com</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">audience</span><span class="p">:</span> <span class="dl">'</span><span class="s1">my-mcp-server</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">jwksUri</span><span class="p">:</span> <span class="dl">'</span><span class="s1">https://auth.example.com/.well-known/jwks.json</span><span class="dl">'</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="kd">const</span> <span class="nx">transport</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">HttpTransport</span><span class="p">({</span>
+  <span class="na">port</span><span class="p">:</span> <span class="mi">3000</span><span class="p">,</span>
+  <span class="na">authValidator</span><span class="p">:</span> <span class="nx">validator</span><span class="p">,</span>
+<span class="p">});</span>
+</code></pre></div></div>
+
+<h2 id="pkce-support-authpkce">PKCE Support (<code class="language-plaintext highlighter-rouge">auth/pkce</code>)</h2>
+
+<h3 id="functions">Functions</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Function</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">generateCodeVerifier()</code></td>
+      <td>Generate random code verifier</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">generateCodeChallenge(verifier)</code></td>
+      <td>Create S256 code challenge</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">validateCodeVerifier(verifier, challenge)</code></td>
+      <td>Verify PKCE codes match</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="usage-1">Usage</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">generateCodeVerifier</span><span class="p">,</span> <span class="nx">generateCodeChallenge</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="c1">// Client generates verifier</span>
+<span class="kd">const</span> <span class="nx">verifier</span> <span class="o">=</span> <span class="nx">generateCodeVerifier</span><span class="p">();</span>
+
+<span class="c1">// Client sends challenge with auth request</span>
+<span class="kd">const</span> <span class="nx">challenge</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">generateCodeChallenge</span><span class="p">(</span><span class="nx">verifier</span><span class="p">);</span>
+
+<span class="c1">// Authorization request includes:</span>
+<span class="c1">// code_challenge=&lt;challenge&gt;</span>
+<span class="c1">// code_challenge_method=S256</span>
+</code></pre></div></div>
+
+<h2 id="token-handling-authtokens">Token Handling (<code class="language-plaintext highlighter-rouge">auth/tokens</code>)</h2>
+
+<h3 id="functions-1">Functions</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Function</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">parseAuthorizationHeader(header)</code></td>
+      <td>Extract token from header</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">decodeJwt(token)</code></td>
+      <td>Decode JWT without verification</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">verifyJwt(token, jwks)</code></td>
+      <td>Verify JWT signature</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">isTokenExpired(tokenInfo)</code></td>
+      <td>Check token expiration</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="types">Types</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">interface</span> <span class="nx">JwtHeader</span> <span class="p">{</span>
+  <span class="nl">alg</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">typ</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">kid</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">JwtPayload</span> <span class="p">{</span>
+  <span class="nl">iss</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">sub</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">aud</span><span class="p">?:</span> <span class="kr">string</span> <span class="o">|</span> <span class="kr">string</span><span class="p">[];</span>
+  <span class="nl">exp</span><span class="p">:</span> <span class="kr">number</span><span class="p">;</span>
+  <span class="nl">iat</span><span class="p">:</span> <span class="kr">number</span><span class="p">;</span>
+  <span class="nl">scope</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="p">[</span><span class="nx">key</span><span class="p">:</span> <span class="kr">string</span><span class="p">]:</span> <span class="nx">unknown</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="usage-2">Usage</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">parseAuthorizationHeader</span><span class="p">,</span> <span class="nx">verifyJwt</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">token</span> <span class="o">=</span> <span class="nx">parseAuthorizationHeader</span><span class="p">(</span><span class="dl">'</span><span class="s1">Bearer eyJ...</span><span class="dl">'</span><span class="p">);</span>
+<span class="kd">const</span> <span class="nx">payload</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">verifyJwt</span><span class="p">(</span><span class="nx">token</span><span class="p">,</span> <span class="nx">jwksClient</span><span class="p">);</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="nx">isTokenExpired</span><span class="p">(</span><span class="nx">payload</span><span class="p">))</span> <span class="p">{</span>
+  <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="dl">'</span><span class="s1">Token expired</span><span class="dl">'</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="metadata-discovery-authdiscovery">Metadata Discovery (<code class="language-plaintext highlighter-rouge">auth/discovery</code>)</h2>
+
+<h3 id="functions-2">Functions</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Function</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">fetchAuthServerMetadata(issuer)</code></td>
+      <td>Fetch OAuth server metadata</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">getProtectedResourceMetadata()</code></td>
+      <td>Get server’s resource metadata</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="types-1">Types</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">interface</span> <span class="nx">AuthServerMetadata</span> <span class="p">{</span>
+  <span class="nl">issuer</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">authorization_endpoint</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">token_endpoint</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">jwks_uri</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">scopes_supported</span><span class="p">:</span> <span class="kr">string</span><span class="p">[];</span>
+  <span class="nl">response_types_supported</span><span class="p">:</span> <span class="kr">string</span><span class="p">[];</span>
+  <span class="nl">grant_types_supported</span><span class="p">:</span> <span class="kr">string</span><span class="p">[];</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">ProtectedResourceMetadata</span> <span class="p">{</span>
+  <span class="nl">resource</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">authorization_servers</span><span class="p">:</span> <span class="kr">string</span><span class="p">[];</span>
+  <span class="nl">scopes_supported</span><span class="p">:</span> <span class="kr">string</span><span class="p">[];</span>
+  <span class="nl">bearer_methods_supported</span><span class="p">:</span> <span class="kr">string</span><span class="p">[];</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="usage-3">Usage</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">fetchAuthServerMetadata</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">metadata</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">fetchAuthServerMetadata</span><span class="p">(</span><span class="dl">'</span><span class="s1">https://auth.example.com</span><span class="dl">'</span><span class="p">);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">authorization_endpoint</span><span class="p">);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">metadata</span><span class="p">.</span><span class="nx">token_endpoint</span><span class="p">);</span>
+</code></pre></div></div>
+
+<h2 id="m2m-extension-extensionsoauth-m2m">M2M Extension (<code class="language-plaintext highlighter-rouge">extensions/oauth-m2m</code>)</h2>
+
+<h3 id="m2mauthprovider-class">M2MAuthProvider Class</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nx">M2MAuthProvider</span> <span class="p">{</span>
+  <span class="kd">constructor</span><span class="p">(</span><span class="nx">options</span><span class="p">:</span> <span class="nx">M2MAuthOptions</span><span class="p">);</span>
+  <span class="nx">getToken</span><span class="p">():</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="kr">string</span><span class="o">&gt;</span><span class="p">;</span>
+  <span class="nx">refreshToken</span><span class="p">():</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="kr">string</span><span class="o">&gt;</span><span class="p">;</span>
+  <span class="nx">revokeToken</span><span class="p">():</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">M2MAuthOptions</span> <span class="p">{</span>
+  <span class="nl">tokenEndpoint</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">clientId</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">clientSecret</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">scope</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="usage-4">Usage</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">M2MAuthProvider</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">auth</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">M2MAuthProvider</span><span class="p">({</span>
+  <span class="na">tokenEndpoint</span><span class="p">:</span> <span class="dl">'</span><span class="s1">https://auth.example.com/token</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">clientId</span><span class="p">:</span> <span class="dl">'</span><span class="s1">my-service</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">clientSecret</span><span class="p">:</span> <span class="dl">'</span><span class="s1">secret</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">scope</span><span class="p">:</span> <span class="dl">'</span><span class="s1">mcp:write mcp:tool:calculate</span><span class="dl">'</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="kd">const</span> <span class="nx">token</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">auth</span><span class="p">.</span><span class="nx">getToken</span><span class="p">();</span>
+</code></pre></div></div>
+
+<h2 id="scopes-authscopes">Scopes (<code class="language-plaintext highlighter-rouge">auth/scopes</code>)</h2>
+
+<p>MCP uses a hierarchical scope system with three base scopes and tool-specific scopes.</p>
+
+<h3 id="base-scopes">Base Scopes</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Scope</th>
+      <th>Description</th>
+      <th>Operations</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">mcp:read</code></td>
+      <td>Read-only access</td>
+      <td><code class="language-plaintext highlighter-rouge">tools/list</code>, <code class="language-plaintext highlighter-rouge">resources/list</code>, <code class="language-plaintext highlighter-rouge">prompts/list</code>, <code class="language-plaintext highlighter-rouge">resources/read</code>, <code class="language-plaintext highlighter-rouge">prompts/get</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">mcp:write</code></td>
+      <td>Read and write access</td>
+      <td>All read operations + <code class="language-plaintext highlighter-rouge">tools/call</code>, <code class="language-plaintext highlighter-rouge">resources/subscribe</code>, <code class="language-plaintext highlighter-rouge">logging/setLevel</code>, <code class="language-plaintext highlighter-rouge">sampling/createMessage</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">mcp:admin</code></td>
+      <td>Full administrative access</td>
+      <td>All operations + <code class="language-plaintext highlighter-rouge">server/shutdown</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="tool-specific-scopes">Tool-Specific Scopes</h3>
+
+<p>For fine-grained control, tool-specific scopes use the <code class="language-plaintext highlighter-rouge">mcp:tool:*</code> pattern:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Scope</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">mcp:tool:calculate</code></td>
+      <td>Access to the calculate tool</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">mcp:tool:roll_dice</code></td>
+      <td>Access to the roll_dice tool</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">mcp:tool:tell_fortune</code></td>
+      <td>Access to the tell_fortune tool</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="scope-inheritance-sep-835">Scope Inheritance (SEP-835)</h3>
+
+<p>Parent scopes imply child permissions:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mcp:admin
+├── mcp:write
+│   └── mcp:read
+</code></pre></div></div>
+
+<p>A token with <code class="language-plaintext highlighter-rouge">mcp:admin</code> automatically has <code class="language-plaintext highlighter-rouge">mcp:write</code> and <code class="language-plaintext highlighter-rouge">mcp:read</code> permissions.
+A token with <code class="language-plaintext highlighter-rouge">mcp:write</code> automatically has <code class="language-plaintext highlighter-rouge">mcp:read</code> permissions.</p>
+
+<h3 id="constants">Constants</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">MCP_SCOPES</span><span class="p">,</span> <span class="nx">TOOL_SCOPE_PREFIX</span><span class="p">,</span> <span class="nx">TOOL_SCOPES</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="nx">MCP_SCOPES</span><span class="p">.</span><span class="nx">READ</span>   <span class="c1">// 'mcp:read'</span>
+<span class="nx">MCP_SCOPES</span><span class="p">.</span><span class="nx">WRITE</span>  <span class="c1">// 'mcp:write'</span>
+<span class="nx">MCP_SCOPES</span><span class="p">.</span><span class="nx">ADMIN</span>  <span class="c1">// 'mcp:admin'</span>
+
+<span class="nx">TOOL_SCOPE_PREFIX</span> <span class="c1">// 'mcp:tool:'</span>
+
+<span class="nx">TOOL_SCOPES</span><span class="p">.</span><span class="nx">CALCULATE</span>    <span class="c1">// 'mcp:tool:calculate'</span>
+<span class="nx">TOOL_SCOPES</span><span class="p">.</span><span class="nx">ROLL_DICE</span>    <span class="c1">// 'mcp:tool:roll_dice'</span>
+<span class="nx">TOOL_SCOPES</span><span class="p">.</span><span class="nx">TELL_FORTUNE</span> <span class="c1">// 'mcp:tool:tell_fortune'</span>
+</code></pre></div></div>
+
+<h3 id="utility-functions">Utility Functions</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Function</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">parseScopes(scopeString)</code></td>
+      <td>Parse space-separated scope string into array</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">scopesToString(scopes)</code></td>
+      <td>Convert scope array to space-separated string</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">isToolScope(scope)</code></td>
+      <td>Check if scope is a tool-specific scope</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">getToolNameFromScope(scope)</code></td>
+      <td>Extract tool name from <code class="language-plaintext highlighter-rouge">mcp:tool:*</code> scope</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">buildToolScope(toolName)</code></td>
+      <td>Build <code class="language-plaintext highlighter-rouge">mcp:tool:toolName</code> scope string</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">getAllMcpScopes()</code></td>
+      <td>Get all base MCP scopes</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">getAllToolScopes()</code></td>
+      <td>Get all defined tool scopes</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">checkScopeWithInheritance(tokenScopes, required)</code></td>
+      <td>Quick check with inheritance</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="scopemanager-class">ScopeManager Class</h3>
+
+<p>Manages OAuth scope validation and enforcement with inheritance support.</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nx">ScopeManager</span> <span class="p">{</span>
+  <span class="kd">constructor</span><span class="p">(</span><span class="nx">config</span><span class="p">?:</span> <span class="nb">Partial</span><span class="o">&lt;</span><span class="nx">ScopeManagerConfig</span><span class="o">&gt;</span><span class="p">);</span>
+
+  <span class="cm">/** Check if token scopes include required scope(s) */</span>
+  <span class="nx">hasScope</span><span class="p">(</span><span class="nx">tokenScopes</span><span class="p">:</span> <span class="kr">string</span><span class="p">[]</span> <span class="o">|</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">required</span><span class="p">:</span> <span class="kr">string</span> <span class="o">|</span> <span class="kr">string</span><span class="p">[]):</span> <span class="nx">boolean</span><span class="p">;</span>
+
+  <span class="cm">/** Check scope with inheritance (admin → write → read) */</span>
+  <span class="nx">hasScopeWithInheritance</span><span class="p">(</span><span class="nx">tokenScopes</span><span class="p">:</span> <span class="kr">string</span><span class="p">[]</span> <span class="o">|</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">required</span><span class="p">:</span> <span class="kr">string</span><span class="p">):</span> <span class="nx">boolean</span><span class="p">;</span>
+
+  <span class="cm">/** Check all required scopes with inheritance */</span>
+  <span class="nx">checkScopes</span><span class="p">(</span><span class="nx">tokenScopes</span><span class="p">:</span> <span class="kr">string</span><span class="p">[]</span> <span class="o">|</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">required</span><span class="p">:</span> <span class="kr">string</span><span class="p">[]):</span> <span class="nx">ScopeCheckResult</span><span class="p">;</span>
+
+  <span class="cm">/** Get scopes required for an MCP method */</span>
+  <span class="nx">getRequiredScopes</span><span class="p">(</span><span class="nx">method</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">toolName</span><span class="p">?:</span> <span class="kr">string</span><span class="p">):</span> <span class="kr">string</span><span class="p">[];</span>
+
+  <span class="cm">/** Validate method access, throws InsufficientScopeError if denied */</span>
+  <span class="nx">validateMethodAccess</span><span class="p">(</span>
+    <span class="nx">tokenScopes</span><span class="p">:</span> <span class="kr">string</span><span class="p">[]</span> <span class="o">|</span> <span class="kr">string</span><span class="p">,</span>
+    <span class="nx">method</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span>
+    <span class="nx">toolName</span><span class="p">?:</span> <span class="kr">string</span>
+  <span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+
+  <span class="cm">/** Validate tool access with optional tool-specific scope */</span>
+  <span class="nx">validateToolAccess</span><span class="p">(</span>
+    <span class="nx">tokenScopes</span><span class="p">:</span> <span class="kr">string</span><span class="p">[]</span> <span class="o">|</span> <span class="kr">string</span><span class="p">,</span>
+    <span class="nx">toolName</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span>
+    <span class="nx">requireToolScope</span><span class="p">?:</span> <span class="nx">boolean</span>
+  <span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+
+  <span class="cm">/** Get all effective scopes including inherited ones */</span>
+  <span class="nx">getEffectiveScopes</span><span class="p">(</span><span class="nx">scopes</span><span class="p">:</span> <span class="kr">string</span><span class="p">[]</span> <span class="o">|</span> <span class="kr">string</span><span class="p">):</span> <span class="kr">string</span><span class="p">[];</span>
+
+  <span class="cm">/** Build 403 response with WWW-Authenticate header */</span>
+  <span class="nx">build403Response</span><span class="p">(</span><span class="nx">error</span><span class="p">:</span> <span class="nx">InsufficientScopeError</span><span class="p">):</span> <span class="p">{</span>
+    <span class="nl">status</span><span class="p">:</span> <span class="kr">number</span><span class="p">;</span>
+    <span class="nl">headers</span><span class="p">:</span> <span class="nb">Record</span><span class="o">&lt;</span><span class="kr">string</span><span class="p">,</span> <span class="kr">string</span><span class="o">&gt;</span><span class="p">;</span>
+    <span class="nl">body</span><span class="p">:</span> <span class="p">{</span> <span class="na">error</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span> <span class="nl">error_description</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span> <span class="nl">required_scope</span><span class="p">:</span> <span class="kr">string</span> <span class="p">};</span>
+  <span class="p">};</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">ScopeManagerConfig</span> <span class="p">{</span>
+  <span class="cm">/** Resource metadata URL for WWW-Authenticate header */</span>
+  <span class="nl">resourceMetadataUrl</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="cm">/** Realm for WWW-Authenticate header */</span>
+  <span class="nl">realm</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="cm">/** Custom method-to-scope mapping (merged with defaults) */</span>
+  <span class="nl">customMethodScopes</span><span class="p">?:</span> <span class="nb">Record</span><span class="o">&lt;</span><span class="kr">string</span><span class="p">,</span> <span class="kr">string</span><span class="p">[]</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">ScopeCheckResult</span> <span class="p">{</span>
+  <span class="nl">allowed</span><span class="p">:</span> <span class="nx">boolean</span><span class="p">;</span>
+  <span class="nl">missingScopes</span><span class="p">?:</span> <span class="kr">string</span><span class="p">[];</span>
+  <span class="nl">message</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="insufficientscopeerror-class">InsufficientScopeError Class</h3>
+
+<p>Error thrown when token lacks required scope.</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nx">InsufficientScopeError</span> <span class="kd">extends</span> <span class="nb">Error</span> <span class="p">{</span>
+  <span class="k">readonly</span> <span class="nx">code</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">insufficient_scope</span><span class="dl">'</span><span class="p">;</span>
+  <span class="k">readonly</span> <span class="nx">httpStatus</span> <span class="o">=</span> <span class="mi">403</span><span class="p">;</span>
+  <span class="k">readonly</span> <span class="nx">requiredScopes</span><span class="p">:</span> <span class="kr">string</span><span class="p">[];</span>
+  <span class="k">readonly</span> <span class="nx">tokenScopes</span><span class="p">:</span> <span class="kr">string</span><span class="p">[];</span>
+
+  <span class="kd">constructor</span><span class="p">(</span>
+    <span class="nx">requiredScopes</span><span class="p">:</span> <span class="kr">string</span><span class="p">[],</span>
+    <span class="nx">tokenScopes</span><span class="p">:</span> <span class="kr">string</span><span class="p">[],</span>
+    <span class="nx">message</span><span class="p">?:</span> <span class="kr">string</span>
+  <span class="p">);</span>
+
+  <span class="cm">/** Get required scope string for WWW-Authenticate header */</span>
+  <span class="nx">getRequiredScopeString</span><span class="p">():</span> <span class="kr">string</span><span class="p">;</span>
+
+  <span class="cm">/** Build WWW-Authenticate header for this error */</span>
+  <span class="nx">buildWwwAuthenticateHeader</span><span class="p">(</span><span class="nx">resourceMetadataUrl</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">realm</span><span class="p">?:</span> <span class="kr">string</span><span class="p">):</span> <span class="kr">string</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="method-to-scope-mapping">Method-to-Scope Mapping</h3>
+
+<p>Default scope requirements for MCP methods:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Required Scope</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">tools/list</code></td>
+      <td><code class="language-plaintext highlighter-rouge">mcp:read</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">resources/list</code></td>
+      <td><code class="language-plaintext highlighter-rouge">mcp:read</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">prompts/list</code></td>
+      <td><code class="language-plaintext highlighter-rouge">mcp:read</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">resources/read</code></td>
+      <td><code class="language-plaintext highlighter-rouge">mcp:read</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">prompts/get</code></td>
+      <td><code class="language-plaintext highlighter-rouge">mcp:read</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">tools/call</code></td>
+      <td><code class="language-plaintext highlighter-rouge">mcp:write</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">resources/subscribe</code></td>
+      <td><code class="language-plaintext highlighter-rouge">mcp:write</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">resources/unsubscribe</code></td>
+      <td><code class="language-plaintext highlighter-rouge">mcp:write</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">logging/setLevel</code></td>
+      <td><code class="language-plaintext highlighter-rouge">mcp:write</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">sampling/createMessage</code></td>
+      <td><code class="language-plaintext highlighter-rouge">mcp:write</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">server/shutdown</code></td>
+      <td><code class="language-plaintext highlighter-rouge">mcp:admin</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="usage-5">Usage</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span>
+  <span class="nx">ScopeManager</span><span class="p">,</span>
+  <span class="nx">InsufficientScopeError</span><span class="p">,</span>
+  <span class="nx">parseScopes</span><span class="p">,</span>
+  <span class="nx">buildToolScope</span><span class="p">,</span>
+<span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">scopeManager</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ScopeManager</span><span class="p">({</span>
+  <span class="na">resourceMetadataUrl</span><span class="p">:</span> <span class="dl">'</span><span class="s1">https://mcp.example.com/.well-known/oauth-protected-resource</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">realm</span><span class="p">:</span> <span class="dl">'</span><span class="s1">mcp</span><span class="dl">'</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="c1">// Validate method access</span>
+<span class="k">try</span> <span class="p">{</span>
+  <span class="nx">scopeManager</span><span class="p">.</span><span class="nx">validateMethodAccess</span><span class="p">([</span><span class="dl">'</span><span class="s1">mcp:read</span><span class="dl">'</span><span class="p">],</span> <span class="dl">'</span><span class="s1">tools/call</span><span class="dl">'</span><span class="p">);</span>
+<span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nx">error</span> <span class="k">instanceof</span> <span class="nx">InsufficientScopeError</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">const</span> <span class="nx">response</span> <span class="o">=</span> <span class="nx">scopeManager</span><span class="p">.</span><span class="nx">build403Response</span><span class="p">(</span><span class="nx">error</span><span class="p">);</span>
+    <span class="c1">// response.headers['WWW-Authenticate'] contains the header</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// Check scopes with inheritance</span>
+<span class="kd">const</span> <span class="nx">result</span> <span class="o">=</span> <span class="nx">scopeManager</span><span class="p">.</span><span class="nx">checkScopes</span><span class="p">(</span><span class="dl">'</span><span class="s1">mcp:admin</span><span class="dl">'</span><span class="p">,</span> <span class="p">[</span><span class="dl">'</span><span class="s1">mcp:read</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">mcp:write</span><span class="dl">'</span><span class="p">]);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">result</span><span class="p">.</span><span class="nx">allowed</span><span class="p">);</span> <span class="c1">// true (admin implies write implies read)</span>
+
+<span class="c1">// Get effective scopes</span>
+<span class="kd">const</span> <span class="nx">effective</span> <span class="o">=</span> <span class="nx">scopeManager</span><span class="p">.</span><span class="nx">getEffectiveScopes</span><span class="p">(</span><span class="dl">'</span><span class="s1">mcp:admin</span><span class="dl">'</span><span class="p">);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">effective</span><span class="p">);</span> <span class="c1">// ['mcp:admin', 'mcp:write', 'mcp:read']</span>
+</code></pre></div></div>
+
+<h2 id="related">Related</h2>
+
+<ul>
+  <li><a href="../guides/authentication">Authentication Guide</a> - OAuth concepts</li>
+  <li><a href="../reference/environment">Environment Reference</a> - Auth variables</li>
+</ul>
+
+
+<hr>
+
+<div class="nav-footer">
+  <p><strong>Navigation:</strong>
+    <a href="/">Home</a> |
+    <a href="/getting-started/installation">Getting Started</a> |
+    <a href="/guides/protocol">Guides</a> |
+    <a href="/api/protocol">API Reference</a> |
+    <a href="/examples/stdio-server">Examples</a> |
+    <a href="/reference/environment">Reference</a>
+  </p>
+</div>
+
+
+
+      </section>
+      <footer>
+        
+        <p>This project is maintained by <a href="https://github.com/chiefbuilder">chiefbuilder</a></p>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="/assets/js/scale.fix.js"></script>
+  </body>
+</html>

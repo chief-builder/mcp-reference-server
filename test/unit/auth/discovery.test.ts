@@ -21,15 +21,11 @@ import {
   createProtectedResourceRouter,
   registerProtectedResourceEndpoint,
 } from '../../../src/auth/discovery.js';
+import { getTestPort } from '../../helpers/ports.js';
 
 // =============================================================================
 // Test Helpers
 // =============================================================================
-
-let portCounter = 4100;
-function getTestPort(): number {
-  return portCounter++;
-}
 
 async function startServer(app: Express): Promise<{ server: Server; port: number }> {
   const port = getTestPort();

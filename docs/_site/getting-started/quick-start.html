@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Quick Start | MCP Reference Server</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Quick Start" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<meta property="og:description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<link rel="canonical" href="http://localhost:4000/getting-started/quick-start.html" />
+<meta property="og:url" content="http://localhost:4000/getting-started/quick-start.html" />
+<meta property="og:site_name" content="MCP Reference Server" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Quick Start" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification","headline":"Quick Start","url":"http://localhost:4000/getting-started/quick-start.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=4084654cb939e8940665a91c4c56b28d8f437143">
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="http://localhost:4000/">MCP Reference Server</a></h1>
+
+        
+
+        <p>A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification</p>
+
+        
+        <p class="view"><a href="https://github.com/chiefbuilder/mcp-reference-server">View the Project on GitHub <small>chiefbuilder/mcp-reference-server</small></a></p>
+        
+
+        
+
+        
+      </header>
+      <section>
+
+      <h1 id="quick-start">Quick Start</h1>
+
+<p>Get started with the MCP Reference Server.</p>
+
+<h2 id="running-this-server">Running This Server</h2>
+
+<p>This server includes three example tools (<code class="language-plaintext highlighter-rouge">tell_fortune</code>, <code class="language-plaintext highlighter-rouge">calculate</code>, <code class="language-plaintext highlighter-rouge">roll_dice</code>) ready to use:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Start the server (stdio mode)</span>
+npm run dev
+
+<span class="c"># Or start with HTTP transport</span>
+<span class="nv">MCP_TRANSPORT</span><span class="o">=</span>http <span class="nv">MCP_PORT</span><span class="o">=</span>3000 npm run dev
+</code></pre></div></div>
+
+<h2 id="example-tool-call">Example Tool Call</h2>
+
+<p>Once running, you can call the <code class="language-plaintext highlighter-rouge">tell_fortune</code> tool:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"jsonrpc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"method"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tools/call"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tell_fortune"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"arguments"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"category"</span><span class="p">:</span><span class="w"> </span><span class="s2">"career"</span><span class="p">,</span><span class="w"> </span><span class="nl">"mood"</span><span class="p">:</span><span class="w"> </span><span class="s2">"optimistic"</span><span class="w"> </span><span class="p">}</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>Response:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"jsonrpc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"result"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"content"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"text"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"text"</span><span class="p">:</span><span class="w"> </span><span class="s2">"{</span><span class="se">\"</span><span class="s2">category</span><span class="se">\"</span><span class="s2">:</span><span class="se">\"</span><span class="s2">career</span><span class="se">\"</span><span class="s2">,</span><span class="se">\"</span><span class="s2">mood</span><span class="se">\"</span><span class="s2">:</span><span class="se">\"</span><span class="s2">optimistic</span><span class="se">\"</span><span class="s2">,</span><span class="se">\"</span><span class="s2">fortune</span><span class="se">\"</span><span class="s2">:</span><span class="se">\"</span><span class="s2">Your hard work is about to pay off.</span><span class="se">\"</span><span class="s2">}"</span><span class="w">
+    </span><span class="p">}]</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h2 id="testing-with-mcp-inspector">Testing with MCP Inspector</h2>
+
+<p>The <a href="https://github.com/modelcontextprotocol/inspector">MCP Inspector</a> provides a visual interface for testing:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>npx @modelcontextprotocol/inspector mcp-reference-server
+</code></pre></div></div>
+
+<h2 id="available-tools">Available Tools</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Tool</th>
+      <th>Description</th>
+      <th>Example Arguments</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">tell_fortune</code></td>
+      <td>Get mystical fortunes</td>
+      <td><code class="language-plaintext highlighter-rouge">{ "category": "love", "mood": "optimistic" }</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">calculate</code></td>
+      <td>Arithmetic operations</td>
+      <td><code class="language-plaintext highlighter-rouge">{ "operation": "add", "a": 5, "b": 3 }</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">roll_dice</code></td>
+      <td>Roll dice (D&amp;D notation)</td>
+      <td><code class="language-plaintext highlighter-rouge">{ "notation": "2d6+3" }</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="calculator-example">Calculator Example</h2>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"jsonrpc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"method"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tools/call"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"calculate"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"arguments"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"operation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"multiply"</span><span class="p">,</span><span class="w"> </span><span class="nl">"a"</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="nl">"b"</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="w"> </span><span class="p">}</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>Response: <code class="language-plaintext highlighter-rouge">{"result": 42, "expression": "6 × 7 = 42"}</code></p>
+
+<h2 id="dice-roller-example">Dice Roller Example</h2>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"jsonrpc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"method"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tools/call"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"roll_dice"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"arguments"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"notation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2d6+5"</span><span class="w"> </span><span class="p">}</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>Response: <code class="language-plaintext highlighter-rouge">{"notation": "2d6+5", "rolls": [4, 3], "modifier": 5, "total": 12}</code></p>
+
+<h2 id="next-steps">Next Steps</h2>
+
+<ul>
+  <li><a href="configuration">Configuration</a> - Environment variables</li>
+  <li><a href="../guides/transports">Transports Guide</a> - stdio vs HTTP</li>
+  <li><a href="../guides/tools">Tools Guide</a> - Advanced tool features</li>
+</ul>
+
+
+<hr>
+
+<div class="nav-footer">
+  <p><strong>Navigation:</strong>
+    <a href="/">Home</a> |
+    <a href="/getting-started/installation">Getting Started</a> |
+    <a href="/guides/protocol">Guides</a> |
+    <a href="/api/protocol">API Reference</a> |
+    <a href="/examples/stdio-server">Examples</a> |
+    <a href="/reference/environment">Reference</a>
+  </p>
+</div>
+
+
+
+      </section>
+      <footer>
+        
+        <p>This project is maintained by <a href="https://github.com/chiefbuilder">chiefbuilder</a></p>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="/assets/js/scale.fix.js"></script>
+  </body>
+</html>

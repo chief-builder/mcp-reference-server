@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Server API | MCP Reference Server</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Server API" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<meta property="og:description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<link rel="canonical" href="http://localhost:4000/api/server.html" />
+<meta property="og:url" content="http://localhost:4000/api/server.html" />
+<meta property="og:site_name" content="MCP Reference Server" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Server API" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification","headline":"Server API","url":"http://localhost:4000/api/server.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=4084654cb939e8940665a91c4c56b28d8f437143">
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="http://localhost:4000/">MCP Reference Server</a></h1>
+
+        
+
+        <p>A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification</p>
+
+        
+        <p class="view"><a href="https://github.com/chiefbuilder/mcp-reference-server">View the Project on GitHub <small>chiefbuilder/mcp-reference-server</small></a></p>
+        
+
+        
+
+        
+      </header>
+      <section>
+
+      <h1 id="server-api-reference">Server API Reference</h1>
+
+<p>Exports for server creation, configuration, and lifecycle management.</p>
+
+<h2 id="mcpserver-server">MCPServer (<code class="language-plaintext highlighter-rouge">server</code>)</h2>
+
+<h3 id="mcpserver-class">MCPServer Class</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nx">MCPServer</span> <span class="p">{</span>
+  <span class="kd">constructor</span><span class="p">(</span><span class="nx">options</span><span class="p">:</span> <span class="nx">MCPServerOptions</span><span class="p">);</span>
+  <span class="nx">connect</span><span class="p">(</span><span class="nx">transport</span><span class="p">:</span> <span class="nx">Transport</span><span class="p">):</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span><span class="p">;</span>
+  <span class="nx">close</span><span class="p">():</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span><span class="p">;</span>
+  <span class="nx">tool</span><span class="p">(</span>
+    <span class="nx">name</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span>
+    <span class="nx">description</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span>
+    <span class="nx">inputSchema</span><span class="p">:</span> <span class="nx">JsonSchema</span><span class="p">,</span>
+    <span class="nx">handler</span><span class="p">:</span> <span class="nx">ToolHandler</span><span class="p">,</span>
+    <span class="nx">options</span><span class="p">?:</span> <span class="nx">ToolOptions</span>
+  <span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+  <span class="nx">getLifecycleManager</span><span class="p">():</span> <span class="nx">LifecycleManager</span><span class="p">;</span>
+  <span class="nx">getCapabilityManager</span><span class="p">():</span> <span class="nx">CapabilityManager</span><span class="p">;</span>
+  <span class="nx">getToolRegistry</span><span class="p">():</span> <span class="nx">ToolRegistry</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">MCPServerOptions</span> <span class="p">{</span>
+  <span class="nl">name</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">version</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">description</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">capabilities</span><span class="p">?:</span> <span class="nx">ServerCapabilities</span><span class="p">;</span>
+  <span class="nl">instructions</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">ToolOptions</span> <span class="p">{</span>
+  <span class="nl">title</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">outputSchema</span><span class="p">?:</span> <span class="nx">JsonSchema</span><span class="p">;</span>
+  <span class="nl">annotations</span><span class="p">?:</span> <span class="nx">ToolAnnotations</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="usage">Usage</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">MCPServer</span><span class="p">,</span> <span class="nx">StdioTransport</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">server</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">MCPServer</span><span class="p">({</span>
+  <span class="na">name</span><span class="p">:</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">version</span><span class="p">:</span> <span class="dl">'</span><span class="s1">1.0.0</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">description</span><span class="p">:</span> <span class="dl">'</span><span class="s1">MCP Reference Server with fortune teller</span><span class="dl">'</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="c1">// Register the tell_fortune tool</span>
+<span class="nx">server</span><span class="p">.</span><span class="nx">tool</span><span class="p">(</span>
+  <span class="dl">'</span><span class="s1">tell_fortune</span><span class="dl">'</span><span class="p">,</span>
+  <span class="dl">'</span><span class="s1">Get a mystical fortune</span><span class="dl">'</span><span class="p">,</span>
+  <span class="p">{</span>
+    <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">object</span><span class="dl">'</span><span class="p">,</span>
+    <span class="na">properties</span><span class="p">:</span> <span class="p">{</span>
+      <span class="na">category</span><span class="p">:</span> <span class="p">{</span> <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">string</span><span class="dl">'</span><span class="p">,</span> <span class="na">enum</span><span class="p">:</span> <span class="p">[</span><span class="dl">'</span><span class="s1">love</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">career</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">health</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">wealth</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">general</span><span class="dl">'</span><span class="p">]</span> <span class="p">},</span>
+      <span class="na">mood</span><span class="p">:</span> <span class="p">{</span> <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">string</span><span class="dl">'</span><span class="p">,</span> <span class="na">enum</span><span class="p">:</span> <span class="p">[</span><span class="dl">'</span><span class="s1">optimistic</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">mysterious</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">cautious</span><span class="dl">'</span><span class="p">]</span> <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="na">required</span><span class="p">:</span> <span class="p">[</span><span class="dl">'</span><span class="s1">category</span><span class="dl">'</span><span class="p">]</span>
+  <span class="p">},</span>
+  <span class="k">async</span> <span class="p">({</span> <span class="nx">category</span><span class="p">,</span> <span class="nx">mood</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">mysterious</span><span class="dl">'</span> <span class="p">})</span> <span class="o">=&gt;</span> <span class="p">({</span>
+    <span class="na">content</span><span class="p">:</span> <span class="p">[{</span> <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">text</span><span class="dl">'</span><span class="p">,</span> <span class="na">text</span><span class="p">:</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">({</span> <span class="nx">category</span><span class="p">,</span> <span class="nx">mood</span><span class="p">,</span> <span class="na">fortune</span><span class="p">:</span> <span class="dl">'</span><span class="s1">...</span><span class="dl">'</span> <span class="p">})</span> <span class="p">}]</span>
+  <span class="p">}),</span>
+  <span class="p">{</span> <span class="na">annotations</span><span class="p">:</span> <span class="p">{</span> <span class="na">readOnlyHint</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span> <span class="na">idempotentHint</span><span class="p">:</span> <span class="kc">false</span> <span class="p">}</span> <span class="p">}</span>
+<span class="p">);</span>
+
+<span class="kd">const</span> <span class="nx">transport</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">StdioTransport</span><span class="p">();</span>
+<span class="k">await</span> <span class="nx">server</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">transport</span><span class="p">);</span>
+</code></pre></div></div>
+
+<h2 id="configuration-config">Configuration (<code class="language-plaintext highlighter-rouge">config</code>)</h2>
+
+<h3 id="loadconfig-function">loadConfig Function</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">function</span> <span class="nx">loadConfig</span><span class="p">(</span><span class="nx">overrides</span><span class="p">?:</span> <span class="nb">Partial</span><span class="o">&lt;</span><span class="nx">Config</span><span class="o">&gt;</span><span class="p">):</span> <span class="nx">Config</span><span class="p">;</span>
+
+<span class="kr">interface</span> <span class="nx">Config</span> <span class="p">{</span>
+  <span class="nl">serverName</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">serverVersion</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">transport</span><span class="p">:</span> <span class="dl">'</span><span class="s1">stdio</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">http</span><span class="dl">'</span><span class="p">;</span>
+  <span class="nl">httpPort</span><span class="p">:</span> <span class="kr">number</span><span class="p">;</span>
+  <span class="nl">httpHost</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">sseEnabled</span><span class="p">:</span> <span class="nx">boolean</span><span class="p">;</span>
+  <span class="nl">sessionTimeout</span><span class="p">:</span> <span class="kr">number</span><span class="p">;</span>
+  <span class="nl">authEnabled</span><span class="p">:</span> <span class="nx">boolean</span><span class="p">;</span>
+  <span class="nl">authIssuer</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">authClientId</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">authScopes</span><span class="p">?:</span> <span class="kr">string</span><span class="p">[];</span>
+  <span class="nl">telemetryEnabled</span><span class="p">:</span> <span class="nx">boolean</span><span class="p">;</span>
+  <span class="nl">debug</span><span class="p">:</span> <span class="nx">boolean</span><span class="p">;</span>
+  <span class="nl">logLevel</span><span class="p">:</span> <span class="dl">'</span><span class="s1">debug</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">info</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">warn</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">error</span><span class="dl">'</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="usage-1">Usage</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">loadConfig</span><span class="p">,</span> <span class="nx">MCPServer</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">config</span> <span class="o">=</span> <span class="nx">loadConfig</span><span class="p">({</span>
+  <span class="na">serverName</span><span class="p">:</span> <span class="dl">'</span><span class="s1">custom-server</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">transport</span><span class="p">:</span> <span class="dl">'</span><span class="s1">http</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">httpPort</span><span class="p">:</span> <span class="mi">8080</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="kd">const</span> <span class="nx">server</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">MCPServer</span><span class="p">({</span>
+  <span class="na">name</span><span class="p">:</span> <span class="nx">config</span><span class="p">.</span><span class="nx">serverName</span><span class="p">,</span>
+  <span class="na">version</span><span class="p">:</span> <span class="nx">config</span><span class="p">.</span><span class="nx">serverVersion</span><span class="p">,</span>
+<span class="p">});</span>
+</code></pre></div></div>
+
+<h2 id="shutdown-manager">Shutdown Manager</h2>
+
+<h3 id="shutdownmanager-class">ShutdownManager Class</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nx">ShutdownManager</span> <span class="p">{</span>
+  <span class="kd">constructor</span><span class="p">(</span><span class="nx">options</span><span class="p">?:</span> <span class="nx">ShutdownManagerOptions</span><span class="p">);</span>
+  <span class="nx">registerHandler</span><span class="p">(</span><span class="nx">handler</span><span class="p">:</span> <span class="nx">CleanupHandler</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+  <span class="nx">shutdown</span><span class="p">(</span><span class="nx">signal</span><span class="p">?:</span> <span class="kr">string</span><span class="p">):</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span><span class="p">;</span>
+  <span class="nx">isShuttingDown</span><span class="p">():</span> <span class="nx">boolean</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">ShutdownManagerOptions</span> <span class="p">{</span>
+  <span class="nl">timeout</span><span class="p">?:</span> <span class="kr">number</span><span class="p">;</span>
+  <span class="nl">signals</span><span class="p">?:</span> <span class="kr">string</span><span class="p">[];</span>
+<span class="p">}</span>
+
+<span class="kd">type</span> <span class="nx">CleanupHandler</span> <span class="o">=</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span> <span class="o">|</span> <span class="k">void</span><span class="p">;</span>
+</code></pre></div></div>
+
+<h3 id="usage-2">Usage</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">createShutdownManager</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">shutdown</span> <span class="o">=</span> <span class="nx">createShutdownManager</span><span class="p">({</span>
+  <span class="na">timeout</span><span class="p">:</span> <span class="mi">30000</span><span class="p">,</span>
+  <span class="na">signals</span><span class="p">:</span> <span class="p">[</span><span class="dl">'</span><span class="s1">SIGINT</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">SIGTERM</span><span class="dl">'</span><span class="p">],</span>
+<span class="p">});</span>
+
+<span class="nx">shutdown</span><span class="p">.</span><span class="nx">registerHandler</span><span class="p">(</span><span class="k">async</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="k">await</span> <span class="nx">database</span><span class="p">.</span><span class="nx">close</span><span class="p">();</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">'</span><span class="s1">Database closed</span><span class="dl">'</span><span class="p">);</span>
+<span class="p">});</span>
+
+<span class="nx">shutdown</span><span class="p">.</span><span class="nx">registerHandler</span><span class="p">(</span><span class="k">async</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="k">await</span> <span class="nx">server</span><span class="p">.</span><span class="nx">close</span><span class="p">();</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">'</span><span class="s1">Server closed</span><span class="dl">'</span><span class="p">);</span>
+<span class="p">});</span>
+</code></pre></div></div>
+
+<h2 id="extensions-framework-extensionsframework">Extensions Framework (<code class="language-plaintext highlighter-rouge">extensions/framework</code>)</h2>
+
+<h3 id="extensionregistry-class">ExtensionRegistry Class</h3>
+
+<p>Manages server-side extensions with capability negotiation during initialization.</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nx">ExtensionRegistry</span> <span class="p">{</span>
+  <span class="cm">/** Register an extension */</span>
+  <span class="nx">registerExtension</span><span class="p">(</span><span class="nx">extension</span><span class="p">:</span> <span class="nx">Extension</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+
+  <span class="cm">/** Unregister an extension */</span>
+  <span class="nx">unregisterExtension</span><span class="p">(</span><span class="nx">name</span><span class="p">:</span> <span class="kr">string</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+
+  <span class="cm">/** Get a registered extension by name */</span>
+  <span class="nx">getExtension</span><span class="p">(</span><span class="nx">name</span><span class="p">:</span> <span class="kr">string</span><span class="p">):</span> <span class="nx">Extension</span> <span class="o">|</span> <span class="kc">undefined</span><span class="p">;</span>
+
+  <span class="cm">/** List all registered extensions */</span>
+  <span class="nx">listExtensions</span><span class="p">():</span> <span class="nx">Extension</span><span class="p">[];</span>
+
+  <span class="cm">/** Check if an extension is registered */</span>
+  <span class="nx">hasExtension</span><span class="p">(</span><span class="nx">name</span><span class="p">:</span> <span class="kr">string</span><span class="p">):</span> <span class="nx">boolean</span><span class="p">;</span>
+
+  <span class="cm">/** Get supported extensions for capability advertisement */</span>
+  <span class="nx">getSupportedExtensions</span><span class="p">():</span> <span class="nb">Record</span><span class="o">&lt;</span><span class="kr">string</span><span class="p">,</span> <span class="nx">ExtensionCapability</span><span class="o">&gt;</span><span class="p">;</span>
+
+  <span class="cm">/** Check if an extension is enabled for the current session */</span>
+  <span class="nx">isEnabled</span><span class="p">(</span><span class="nx">name</span><span class="p">:</span> <span class="kr">string</span><span class="p">):</span> <span class="nx">boolean</span><span class="p">;</span>
+
+  <span class="cm">/** Get all enabled extensions */</span>
+  <span class="nx">getEnabledExtensions</span><span class="p">():</span> <span class="nb">Map</span><span class="o">&lt;</span><span class="kr">string</span><span class="p">,</span> <span class="nx">ExtensionCapability</span><span class="o">&gt;</span><span class="p">;</span>
+
+  <span class="cm">/** Shutdown all enabled extensions */</span>
+  <span class="nx">shutdown</span><span class="p">():</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="types">Types</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">interface</span> <span class="nx">Extension</span> <span class="p">{</span>
+  <span class="cm">/** Full name in namespace/extension-name format (e.g., 'anthropic/oauth-m2m') */</span>
+  <span class="nl">name</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">description</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">version</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">settings</span><span class="p">?:</span> <span class="nb">Record</span><span class="o">&lt;</span><span class="kr">string</span><span class="p">,</span> <span class="nx">unknown</span><span class="o">&gt;</span><span class="p">;</span>
+  <span class="nl">onInitialize</span><span class="p">?:</span> <span class="p">(</span><span class="nx">clientSettings</span><span class="p">:</span> <span class="nx">unknown</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span><span class="p">;</span>
+  <span class="nl">onShutdown</span><span class="p">?:</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">ExtensionCapability</span> <span class="p">{</span>
+  <span class="nl">name</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">settings</span><span class="p">?:</span> <span class="nb">Record</span><span class="o">&lt;</span><span class="kr">string</span><span class="p">,</span> <span class="nx">unknown</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">ExtensionNegotiationResult</span> <span class="p">{</span>
+  <span class="nl">enabled</span><span class="p">:</span> <span class="nb">Record</span><span class="o">&lt;</span><span class="kr">string</span><span class="p">,</span> <span class="nx">ExtensionCapability</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="validation-functions">Validation Functions</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Function</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">validateExtensionName(name)</code></td>
+      <td>Validate extension name format, throws on invalid</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">isValidExtensionName(name)</code></td>
+      <td>Check if name is valid without throwing</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">parseExtensionName(name)</code></td>
+      <td>Parse into <code class="language-plaintext highlighter-rouge">{ namespace, extension }</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="negotiation-functions">Negotiation Functions</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Function</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">negotiateExtensions(clientExperimental, registry)</code></td>
+      <td>Negotiate extensions during initialize</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">buildExperimentalCapabilities(registry, additional?)</code></td>
+      <td>Build server’s experimental capabilities</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">createDefaultRegistry()</code></td>
+      <td>Create registry with built-in extensions</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="usage-3">Usage</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span>
+  <span class="nx">ExtensionRegistry</span><span class="p">,</span>
+  <span class="nx">negotiateExtensions</span><span class="p">,</span>
+  <span class="nx">buildExperimentalCapabilities</span><span class="p">,</span>
+  <span class="nx">validateExtensionName</span><span class="p">,</span>
+<span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">registry</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ExtensionRegistry</span><span class="p">();</span>
+
+<span class="c1">// Register a custom extension</span>
+<span class="nx">registry</span><span class="p">.</span><span class="nx">registerExtension</span><span class="p">({</span>
+  <span class="na">name</span><span class="p">:</span> <span class="dl">'</span><span class="s1">mycompany/custom-feature</span><span class="dl">'</span><span class="p">,</span>  <span class="c1">// namespace/extension-name format</span>
+  <span class="na">version</span><span class="p">:</span> <span class="dl">'</span><span class="s1">1.0.0</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">settings</span><span class="p">:</span> <span class="p">{</span> <span class="na">enabled</span><span class="p">:</span> <span class="kc">true</span> <span class="p">},</span>
+  <span class="k">async</span> <span class="nx">onInitialize</span><span class="p">(</span><span class="nx">clientSettings</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">'</span><span class="s1">Extension initialized with</span><span class="dl">'</span><span class="p">,</span> <span class="nx">clientSettings</span><span class="p">);</span>
+  <span class="p">},</span>
+  <span class="k">async</span> <span class="nx">onShutdown</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">'</span><span class="s1">Extension shutdown</span><span class="dl">'</span><span class="p">);</span>
+  <span class="p">},</span>
+<span class="p">});</span>
+
+<span class="c1">// During initialize handler</span>
+<span class="kd">const</span> <span class="nx">negotiationResult</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">negotiateExtensions</span><span class="p">(</span>
+  <span class="nx">clientParams</span><span class="p">.</span><span class="nx">capabilities</span><span class="p">?.</span><span class="nx">experimental</span><span class="p">,</span>
+  <span class="nx">registry</span>
+<span class="p">);</span>
+
+<span class="c1">// Build server response capabilities</span>
+<span class="kd">const</span> <span class="nx">experimental</span> <span class="o">=</span> <span class="nx">buildExperimentalCapabilities</span><span class="p">(</span><span class="nx">registry</span><span class="p">);</span>
+</code></pre></div></div>
+
+<h3 id="extension-name-format">Extension Name Format</h3>
+
+<p>Extension names must follow the <code class="language-plaintext highlighter-rouge">namespace/extension-name</code> pattern:</p>
+<ul>
+  <li>Namespace: lowercase letters, numbers, hyphens</li>
+  <li>Extension name: lowercase letters, numbers, hyphens</li>
+</ul>
+
+<p>Examples: <code class="language-plaintext highlighter-rouge">anthropic/oauth-m2m</code>, <code class="language-plaintext highlighter-rouge">mycompany/custom-auth</code></p>
+
+<h2 id="logging-handler-logginghandler">Logging Handler (<code class="language-plaintext highlighter-rouge">logging/handler</code>)</h2>
+
+<h3 id="logginghandler-class">LoggingHandler Class</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nx">LoggingHandler</span> <span class="p">{</span>
+  <span class="kd">constructor</span><span class="p">(</span><span class="nx">options</span><span class="p">?:</span> <span class="nx">LoggingOptions</span><span class="p">);</span>
+  <span class="nx">setLevel</span><span class="p">(</span><span class="nx">level</span><span class="p">:</span> <span class="nx">LogLevel</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+  <span class="nx">getLevel</span><span class="p">():</span> <span class="nx">LogLevel</span><span class="p">;</span>
+  <span class="nx">log</span><span class="p">(</span><span class="nx">level</span><span class="p">:</span> <span class="nx">LogLevel</span><span class="p">,</span> <span class="nx">message</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">data</span><span class="p">?:</span> <span class="nx">unknown</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+  <span class="nx">debug</span><span class="p">(</span><span class="nx">message</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">data</span><span class="p">?:</span> <span class="nx">unknown</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+  <span class="nx">info</span><span class="p">(</span><span class="nx">message</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">data</span><span class="p">?:</span> <span class="nx">unknown</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+  <span class="nx">warn</span><span class="p">(</span><span class="nx">message</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">data</span><span class="p">?:</span> <span class="nx">unknown</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+  <span class="nx">error</span><span class="p">(</span><span class="nx">message</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">data</span><span class="p">?:</span> <span class="nx">unknown</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">type</span> <span class="nx">LogLevel</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">debug</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">info</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">warn</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">error</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kr">interface</span> <span class="nx">LoggingOptions</span> <span class="p">{</span>
+  <span class="nl">level</span><span class="p">?:</span> <span class="nx">LogLevel</span><span class="p">;</span>
+  <span class="nl">handler</span><span class="p">?:</span> <span class="p">(</span><span class="nx">entry</span><span class="p">:</span> <span class="nx">LogEntry</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="k">void</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="usage-4">Usage</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">LoggingHandler</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">logger</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">LoggingHandler</span><span class="p">({</span>
+  <span class="na">level</span><span class="p">:</span> <span class="dl">'</span><span class="s1">info</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">handler</span><span class="p">:</span> <span class="p">(</span><span class="nx">entry</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">entry</span><span class="p">));</span>
+  <span class="p">},</span>
+<span class="p">});</span>
+
+<span class="nx">logger</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="dl">'</span><span class="s1">Server started</span><span class="dl">'</span><span class="p">,</span> <span class="p">{</span> <span class="na">port</span><span class="p">:</span> <span class="mi">3000</span> <span class="p">});</span>
+</code></pre></div></div>
+
+<h2 id="related">Related</h2>
+
+<ul>
+  <li><a href="../getting-started/quick-start">Getting Started</a> - Basic usage</li>
+  <li><a href="../getting-started/configuration">Configuration</a> - Environment variables</li>
+  <li><a href="../guides/observability">Observability Guide</a> - Logging and metrics</li>
+</ul>
+
+
+<hr>
+
+<div class="nav-footer">
+  <p><strong>Navigation:</strong>
+    <a href="/">Home</a> |
+    <a href="/getting-started/installation">Getting Started</a> |
+    <a href="/guides/protocol">Guides</a> |
+    <a href="/api/protocol">API Reference</a> |
+    <a href="/examples/stdio-server">Examples</a> |
+    <a href="/reference/environment">Reference</a>
+  </p>
+</div>
+
+
+
+      </section>
+      <footer>
+        
+        <p>This project is maintained by <a href="https://github.com/chiefbuilder">chiefbuilder</a></p>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="/assets/js/scale.fix.js"></script>
+  </body>
+</html>

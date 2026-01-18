@@ -1,0 +1,278 @@
+@font-face { font-family: 'Noto Sans'; font-weight: 400; font-style: normal; src: url("../fonts/Noto-Sans-regular/Noto-Sans-regular.eot"); src: url("../fonts/Noto-Sans-regular/Noto-Sans-regular.eot?#iefix") format("embedded-opentype"), local("Noto Sans"), local("Noto-Sans-regular"), url("../fonts/Noto-Sans-regular/Noto-Sans-regular.woff2") format("woff2"), url("../fonts/Noto-Sans-regular/Noto-Sans-regular.woff") format("woff"), url("../fonts/Noto-Sans-regular/Noto-Sans-regular.ttf") format("truetype"), url("../fonts/Noto-Sans-regular/Noto-Sans-regular.svg#NotoSans") format("svg"); }
+@font-face { font-family: 'Noto Sans'; font-weight: 700; font-style: normal; src: url("../fonts/Noto-Sans-700/Noto-Sans-700.eot"); src: url("../fonts/Noto-Sans-700/Noto-Sans-700.eot?#iefix") format("embedded-opentype"), local("Noto Sans Bold"), local("Noto-Sans-700"), url("../fonts/Noto-Sans-700/Noto-Sans-700.woff2") format("woff2"), url("../fonts/Noto-Sans-700/Noto-Sans-700.woff") format("woff"), url("../fonts/Noto-Sans-700/Noto-Sans-700.ttf") format("truetype"), url("../fonts/Noto-Sans-700/Noto-Sans-700.svg#NotoSans") format("svg"); }
+@font-face { font-family: 'Noto Sans'; font-weight: 400; font-style: italic; src: url("../fonts/Noto-Sans-italic/Noto-Sans-italic.eot"); src: url("../fonts/Noto-Sans-italic/Noto-Sans-italic.eot?#iefix") format("embedded-opentype"), local("Noto Sans Italic"), local("Noto-Sans-italic"), url("../fonts/Noto-Sans-italic/Noto-Sans-italic.woff2") format("woff2"), url("../fonts/Noto-Sans-italic/Noto-Sans-italic.woff") format("woff"), url("../fonts/Noto-Sans-italic/Noto-Sans-italic.ttf") format("truetype"), url("../fonts/Noto-Sans-italic/Noto-Sans-italic.svg#NotoSans") format("svg"); }
+@font-face { font-family: 'Noto Sans'; font-weight: 700; font-style: italic; src: url("../fonts/Noto-Sans-700italic/Noto-Sans-700italic.eot"); src: url("../fonts/Noto-Sans-700italic/Noto-Sans-700italic.eot?#iefix") format("embedded-opentype"), local("Noto Sans Bold Italic"), local("Noto-Sans-700italic"), url("../fonts/Noto-Sans-700italic/Noto-Sans-700italic.woff2") format("woff2"), url("../fonts/Noto-Sans-700italic/Noto-Sans-700italic.woff") format("woff"), url("../fonts/Noto-Sans-700italic/Noto-Sans-700italic.ttf") format("truetype"), url("../fonts/Noto-Sans-700italic/Noto-Sans-700italic.svg#NotoSans") format("svg"); }
+.highlight table td { padding: 5px; }
+
+.highlight table pre { margin: 0; }
+
+.highlight .cm { color: #999988; font-style: italic; }
+
+.highlight .cp { color: #999999; font-weight: bold; }
+
+.highlight .c1 { color: #999988; font-style: italic; }
+
+.highlight .cs { color: #999999; font-weight: bold; font-style: italic; }
+
+.highlight .c, .highlight .cd { color: #999988; font-style: italic; }
+
+.highlight .err { color: #a61717; background-color: #e3d2d2; }
+
+.highlight .gd { color: #000000; background-color: #ffdddd; }
+
+.highlight .ge { color: #000000; font-style: italic; }
+
+.highlight .gr { color: #aa0000; }
+
+.highlight .gh { color: #999999; }
+
+.highlight .gi { color: #000000; background-color: #ddffdd; }
+
+.highlight .go { color: #888888; }
+
+.highlight .gp { color: #555555; }
+
+.highlight .gs { font-weight: bold; }
+
+.highlight .gu { color: #aaaaaa; }
+
+.highlight .gt { color: #aa0000; }
+
+.highlight .kc { color: #000000; font-weight: bold; }
+
+.highlight .kd { color: #000000; font-weight: bold; }
+
+.highlight .kn { color: #000000; font-weight: bold; }
+
+.highlight .kp { color: #000000; font-weight: bold; }
+
+.highlight .kr { color: #000000; font-weight: bold; }
+
+.highlight .kt { color: #445588; font-weight: bold; }
+
+.highlight .k, .highlight .kv { color: #000000; font-weight: bold; }
+
+.highlight .mf { color: #009999; }
+
+.highlight .mh { color: #009999; }
+
+.highlight .il { color: #009999; }
+
+.highlight .mi { color: #009999; }
+
+.highlight .mo { color: #009999; }
+
+.highlight .m, .highlight .mb, .highlight .mx { color: #009999; }
+
+.highlight .sb { color: #d14; }
+
+.highlight .sc { color: #d14; }
+
+.highlight .sd { color: #d14; }
+
+.highlight .s2 { color: #d14; }
+
+.highlight .se { color: #d14; }
+
+.highlight .sh { color: #d14; }
+
+.highlight .si { color: #d14; }
+
+.highlight .sx { color: #d14; }
+
+.highlight .sr { color: #009926; }
+
+.highlight .s1 { color: #d14; }
+
+.highlight .ss { color: #990073; }
+
+.highlight .s { color: #d14; }
+
+.highlight .na { color: #008080; }
+
+.highlight .bp { color: #999999; }
+
+.highlight .nb { color: #0086B3; }
+
+.highlight .nc { color: #445588; font-weight: bold; }
+
+.highlight .no { color: #008080; }
+
+.highlight .nd { color: #3c5d5d; font-weight: bold; }
+
+.highlight .ni { color: #800080; }
+
+.highlight .ne { color: #990000; font-weight: bold; }
+
+.highlight .nf { color: #990000; font-weight: bold; }
+
+.highlight .nl { color: #990000; font-weight: bold; }
+
+.highlight .nn { color: #555555; }
+
+.highlight .nt { color: #000080; }
+
+.highlight .vc { color: #008080; }
+
+.highlight .vg { color: #008080; }
+
+.highlight .vi { color: #008080; }
+
+.highlight .nv { color: #008080; }
+
+.highlight .ow { color: #000000; font-weight: bold; }
+
+.highlight .o { color: #000000; font-weight: bold; }
+
+.highlight .w { color: #bbbbbb; }
+
+.highlight { background-color: #f8f8f8; }
+
+body { background-color: #fff; padding: 50px; font: 14px/1.5 "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif; color: #727272; font-weight: 400; }
+
+h1, h2, h3, h4, h5, h6 { color: #222; margin: 0 0 20px; }
+
+p, ul, ol, table, pre, dl { margin: 0 0 20px; }
+
+h1, h2, h3 { line-height: 1.1; }
+
+h1 { font-size: 28px; }
+
+h2 { color: #393939; }
+
+h3, h4, h5, h6 { color: #494949; }
+
+a { color: #267CB9; text-decoration: none; }
+
+a:hover, a:focus { color: #069; font-weight: bold; }
+
+a small { font-size: 11px; color: #777; margin-top: -0.3em; display: block; }
+
+a:hover small { color: #777; }
+
+.wrapper { width: 860px; margin: 0 auto; }
+
+blockquote { border-left: 1px solid #e5e5e5; margin: 0; padding: 0 0 0 20px; font-style: italic; }
+
+code, pre { font-family: Monaco, Bitstream Vera Sans Mono, Lucida Console, Terminal, Consolas, Liberation Mono, DejaVu Sans Mono, Courier New, monospace; color: #333; }
+
+pre { padding: 8px 15px; background: #f8f8f8; border-radius: 5px; border: 1px solid #e5e5e5; overflow-x: auto; }
+
+table { width: 100%; border-collapse: collapse; }
+
+th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid #e5e5e5; }
+
+dt { color: #444; font-weight: 700; }
+
+th { color: #444; }
+
+img { max-width: 100%; }
+
+kbd { background-color: #fafbfc; border: 1px solid #c6cbd1; border-bottom-color: #959da5; border-radius: 3px; box-shadow: inset 0 -1px 0 #959da5; color: #444d56; display: inline-block; font-size: 11px; line-height: 10px; padding: 3px 5px; vertical-align: middle; }
+
+header { width: 270px; float: left; position: fixed; -webkit-font-smoothing: subpixel-antialiased; }
+
+ul.downloads { list-style: none; height: 40px; padding: 0; background: #f4f4f4; border-radius: 5px; border: 1px solid #e0e0e0; width: 270px; }
+
+.downloads li { width: 89px; float: left; border-right: 1px solid #e0e0e0; height: 40px; }
+
+.downloads li:first-child a { border-radius: 5px 0 0 5px; }
+
+.downloads li:last-child a { border-radius: 0 5px 5px 0; }
+
+.downloads a { line-height: 1; font-size: 11px; color: #676767; display: block; text-align: center; padding-top: 6px; height: 34px; }
+
+.downloads a:hover, .downloads a:focus { color: #675C5C; font-weight: bold; }
+
+.downloads ul a:active { background-color: #f0f0f0; }
+
+strong { color: #222; font-weight: 700; }
+
+.downloads li + li + li { border-right: none; width: 89px; }
+
+.downloads a strong { font-size: 14px; display: block; color: #222; }
+
+section { width: 500px; float: right; padding-bottom: 50px; }
+
+small { font-size: 11px; }
+
+hr { border: 0; background: #e5e5e5; height: 1px; margin: 0 0 20px; }
+
+footer { width: 270px; float: left; position: fixed; bottom: 50px; -webkit-font-smoothing: subpixel-antialiased; }
+
+@media print, screen and (max-width: 960px) { div.wrapper { width: auto; margin: 0; }
+  header, section, footer { float: none; position: static; width: auto; }
+  header { padding-right: 320px; }
+  section { border: 1px solid #e5e5e5; border-width: 1px 0; padding: 20px 0; margin: 0 0 20px; }
+  header a small { display: inline; }
+  header ul { position: absolute; right: 50px; top: 52px; } }
+@media print, screen and (max-width: 720px) { body { word-wrap: break-word; }
+  header { padding: 0; }
+  header ul, header p.view { position: static; }
+  pre, code { word-wrap: normal; } }
+@media print, screen and (max-width: 480px) { body { padding: 15px; }
+  .downloads { width: 99%; }
+  .downloads li, .downloads li + li + li { width: 33%; } }
+@media print { body { padding: 0.4in; font-size: 12pt; color: #444; } }
+/* Custom styles for MCP Reference Server docs */
+/* Reduce excessive top padding from theme */
+body { padding-top: 20px; }
+
+/* Use flexbox for proper layout alignment */
+.wrapper { display: flex; flex-wrap: wrap; align-items: flex-start; }
+
+/* Warm color palette */
+/* Wider layout - use more screen real estate */
+.wrapper { width: 100%; /* Override theme's fixed 860px */ max-width: 1200px; margin: 0 auto; padding: 0 40px; box-sizing: border-box; }
+
+/* Adjust the two-column layout */
+header { width: 25%; flex-shrink: 0; position: sticky; top: 20px; background: linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%); padding: 20px; border-radius: 12px; margin-right: 30px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); }
+
+section { flex: 1; min-width: 0; }
+
+/* On larger screens, give content more room */
+@media screen and (min-width: 1400px) { .wrapper { max-width: 1600px; }
+  header { width: 18%; } }
+/* On medium screens */
+@media screen and (max-width: 960px) { .wrapper { flex-direction: column; }
+  section { width: 100%; }
+  header { width: 100%; position: relative; margin-bottom: 20px; margin-right: 0; padding-bottom: 20px; border-bottom: 1px solid #e0e0e0; } }
+/* Improve code block styling */
+pre { padding: 16px; padding-left: 20px; overflow-x: auto; font-size: 14px; line-height: 1.5; border-radius: 6px; background-color: #f6f8fa; border-left: 4px solid #d97706; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); }
+
+code { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; font-size: 0.9em; }
+
+/* Inline code styling */
+p code, li code, td code { background-color: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
+
+/* Better table styling */
+table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+
+table th, table td { padding: 10px 12px; border: 1px solid #e0e0e0; text-align: left; }
+
+table th { background: linear-gradient(135deg, #fffbeb 0%, #fff7ed 100%); font-weight: 600; color: #9a3412; }
+
+table tr:nth-child(even) { background-color: #fafbfc; }
+
+table tr:hover { background-color: #fff7ed; }
+
+/* Improve heading hierarchy */
+h1 { border-bottom: 3px solid; border-image: linear-gradient(90deg, #ea580c, #dc2626) 1; padding-bottom: 0.3em; margin-top: 0; margin-bottom: 1em; color: #1e293b; }
+
+h2 { border-bottom: 2px solid #d97706; border-bottom-style: dotted; padding-bottom: 0.3em; margin-top: 1.5em; color: #334155; }
+
+h3 { margin-top: 1.2em; color: #c2410c; }
+
+/* Better link styling in content */
+section a { color: #ea580c; text-decoration: none; transition: color 0.2s ease; }
+
+section a:hover { color: #dc2626; text-decoration: underline; }
+
+/* Navigation improvements */
+header nav ul { list-style: none; padding: 0; margin: 1em 0; }
+
+header nav ul li { margin: 0.5em 0; }
+
+header nav ul li a { color: #ea580c; text-decoration: none; font-weight: 500; transition: all 0.2s ease; }
+
+header nav ul li a:hover { color: #dc2626; padding-left: 4px; }

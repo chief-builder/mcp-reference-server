@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>MCP Reference Server - Implementation Specification | MCP Reference Server</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="MCP Reference Server - Implementation Specification" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<meta property="og:description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<link rel="canonical" href="http://localhost:4000/impl_plan.html" />
+<meta property="og:url" content="http://localhost:4000/impl_plan.html" />
+<meta property="og:site_name" content="MCP Reference Server" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="MCP Reference Server - Implementation Specification" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification","headline":"MCP Reference Server - Implementation Specification","url":"http://localhost:4000/impl_plan.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=4084654cb939e8940665a91c4c56b28d8f437143">
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="http://localhost:4000/">MCP Reference Server</a></h1>
+
+        
+
+        <p>A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification</p>
+
+        
+        <p class="view"><a href="https://github.com/chiefbuilder/mcp-reference-server">View the Project on GitHub <small>chiefbuilder/mcp-reference-server</small></a></p>
+        
+
+        
+
+        
+      </header>
+      <section>
+
+      <h1 id="mcp-reference-server---implementation-specification">MCP Reference Server - Implementation Specification</h1>
+
+<h2 id="overview">Overview</h2>
+
+<h3 id="purpose">Purpose</h3>
+<p>Build a production-quality reference implementation of an MCP (Model Context Protocol) server targeting the 2025-11-25 specification. This server demonstrates all Phase 1 capabilities including JSON-RPC 2.0 messaging, dual transport support (stdio + Streamable HTTP), OAuth 2.1 with PKCE, and a complete extensions framework.</p>
+
+<h3 id="goals">Goals</h3>
+<ul>
+  <li>Serve as a canonical reference for MCP server implementers</li>
+  <li>Demonstrate all Phase 1 protocol features with working code</li>
+  <li>Provide comprehensive test coverage and MCP Inspector compatibility</li>
+  <li>Package as a reusable npm module</li>
+</ul>
+
+<h3 id="technology-stack">Technology Stack</h3>
+<p>| Component | Choice |
+|———–|——–|
+| Language | TypeScript |
+| Runtime | Node.js 20 LTS (minimum) |
+| MCP SDK | <code class="language-plaintext highlighter-rouge">@modelcontextprotocol/sdk</code> (official) |
+| Telemetry | OpenTelemetry (traces, metrics, logs) |
+| Package | npm module |
+| Config | Environment variables (12-factor) |</p>
+
+<hr />
+
+<h2 id="architecture">Architecture</h2>
+
+<h3 id="high-level-design">High-Level Design</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌─────────────────────────────────────────────────────────────────┐
+│                     MCP Reference Server                        │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐ │
+│  │   stdio     │  │ Streamable  │  │    OAuth 2.1 Module     │ │
+│  │  Transport  │  │    HTTP     │  │  (PKCE + M2M + Auth0)   │ │
+│  └──────┬──────┘  └──────┬──────┘  └───────────┬─────────────┘ │
+│         │                │                      │               │
+│         └────────────────┼──────────────────────┘               │
+│                          ▼                                      │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │                  Protocol Handler                          │ │
+│  │  - JSON-RPC 2.0 parsing/serialization                     │ │
+│  │  - Lifecycle management (init → operate → shutdown)       │ │
+│  │  - Capability negotiation                                  │ │
+│  │  - Request routing                                         │ │
+│  └───────────────────────────────────────────────────────────┘ │
+│                          │                                      │
+│         ┌────────────────┼────────────────┐                    │
+│         ▼                ▼                ▼                    │
+│  ┌───────────┐    ┌───────────┐    ┌───────────┐              │
+│  │   Tools   │    │ Logging   │    │Completions│              │
+│  │  Registry │    │  Handler  │    │  Handler  │              │
+│  └───────────┘    └───────────┘    └───────────┘              │
+│         │                                                       │
+│         ▼                                                       │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │                    Tool Implementations                    │ │
+│  │  ┌──────────┐  ┌──────────────┐  ┌─────────────────────┐  │ │
+│  │  │Calculator│  │ Dice Roller  │  │  Fortune Teller     │  │ │
+│  │  └──────────┘  └──────────────┘  └─────────────────────┘  │ │
+│  └───────────────────────────────────────────────────────────┘ │
+│                          │                                      │
+│                          ▼                                      │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │              Observability (OpenTelemetry)                 │ │
+│  │  - Structured logging (JSON)                               │ │
+│  │  - Distributed tracing (OTLP export)                       │ │
+│  │  - Metrics (request count, latency, errors)               │ │
+│  └───────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre></div></div>
+
+<h3 id="project-structure">Project Structure</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mcp-reference-server/
+├── src/
+│   ├── index.ts                 # Entry point, exports
+│   ├── server.ts                # Main server class
+│   ├── config.ts                # Environment config loader
+│   │
+│   ├── protocol/
+│   │   ├── jsonrpc.ts           # JSON-RPC 2.0 types &amp; parsing
+│   │   ├── lifecycle.ts         # Initialize/shutdown handling
+│   │   ├── capabilities.ts      # Capability negotiation
+│   │   └── errors.ts            # Standard error codes
+│   │
+│   ├── transport/
+│   │   ├── stdio.ts             # stdio transport
+│   │   ├── http.ts              # Streamable HTTP transport
+│   │   ├── session.ts           # Session management
+│   │   └── sse.ts               # SSE stream with replay
+│   │
+│   ├── auth/
+│   │   ├── oauth.ts             # OAuth 2.1 core
+│   │   ├── pkce.ts              # PKCE implementation
+│   │   ├── discovery.ts         # Metadata endpoints
+│   │   ├── tokens.ts            # Token validation/refresh
+│   │   └── m2m.ts               # M2M extension
+│   │
+│   ├── tools/
+│   │   ├── registry.ts          # Tool registration &amp; lookup
+│   │   ├── executor.ts          # Tool execution with validation
+│   │   ├── calculator.ts        # Calculator tool
+│   │   ├── dice-roller.ts       # Dice roller tool
+│   │   └── fortune-teller.ts    # Fortune teller tool
+│   │
+│   ├── completions/
+│   │   └── handler.ts           # Argument auto-complete
+│   │
+│   ├── logging/
+│   │   └── handler.ts           # Log level management
+│   │
+│   ├── extensions/
+│   │   ├── framework.ts         # Extension negotiation
+│   │   └── oauth-m2m.ts         # M2M OAuth extension impl
+│   │
+│   └── observability/
+│       ├── telemetry.ts         # OpenTelemetry setup
+│       ├── metrics.ts           # Custom metrics
+│       ├── tracing.ts           # Trace propagation
+│       └── health.ts            # Health endpoints
+│
+├── test/
+│   ├── unit/
+│   │   ├── protocol/            # Protocol unit tests
+│   │   ├── tools/               # Tool unit tests
+│   │   └── auth/                # Auth unit tests
+│   │
+│   └── integration/
+│       ├── stdio.test.ts        # stdio transport tests
+│       ├── http.test.ts         # HTTP transport tests
+│       ├── oauth.test.ts        # OAuth flow tests
+│       └── inspector.test.ts    # MCP Inspector compatibility
+│
+├── package.json
+├── tsconfig.json
+├── .env.example
+└── README.md
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="p0-core-protocol-implementation">P0: Core Protocol Implementation</h2>
+
+<h3 id="json-rpc-20-foundation">JSON-RPC 2.0 Foundation</h3>
+
+<h4 id="message-types">Message Types</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Request (expects response)</span>
+<span class="kr">interface</span> <span class="nx">JsonRpcRequest</span> <span class="p">{</span>
+  <span class="nl">jsonrpc</span><span class="p">:</span> <span class="dl">"</span><span class="s2">2.0</span><span class="dl">"</span><span class="p">;</span>
+  <span class="nl">id</span><span class="p">:</span> <span class="kr">string</span> <span class="o">|</span> <span class="kr">number</span><span class="p">;</span>
+  <span class="nl">method</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">params</span><span class="p">?:</span> <span class="nb">Record</span><span class="o">&lt;</span><span class="kr">string</span><span class="p">,</span> <span class="nx">unknown</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Response (result or error)</span>
+<span class="kr">interface</span> <span class="nx">JsonRpcResponse</span> <span class="p">{</span>
+  <span class="nl">jsonrpc</span><span class="p">:</span> <span class="dl">"</span><span class="s2">2.0</span><span class="dl">"</span><span class="p">;</span>
+  <span class="nl">id</span><span class="p">:</span> <span class="kr">string</span> <span class="o">|</span> <span class="kr">number</span><span class="p">;</span>
+  <span class="nl">result</span><span class="p">?:</span> <span class="nx">unknown</span><span class="p">;</span>
+  <span class="nl">error</span><span class="p">?:</span> <span class="nx">JsonRpcError</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Notification (no response)</span>
+<span class="kr">interface</span> <span class="nx">JsonRpcNotification</span> <span class="p">{</span>
+  <span class="nl">jsonrpc</span><span class="p">:</span> <span class="dl">"</span><span class="s2">2.0</span><span class="dl">"</span><span class="p">;</span>
+  <span class="nl">method</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">params</span><span class="p">?:</span> <span class="nb">Record</span><span class="o">&lt;</span><span class="kr">string</span><span class="p">,</span> <span class="nx">unknown</span><span class="o">&gt;</span><span class="p">;</span>
+  <span class="c1">// NO id field</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">JsonRpcError</span> <span class="p">{</span>
+  <span class="nl">code</span><span class="p">:</span> <span class="kr">number</span><span class="p">;</span>
+  <span class="nl">message</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">data</span><span class="p">?:</span> <span class="nx">unknown</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h4 id="message-id-handling">Message ID Handling</h4>
+<ul>
+  <li>IDs MUST be unique within a session</li>
+  <li>Server echoes exact ID in response</li>
+  <li>Track pending request IDs to prevent duplicates</li>
+  <li>Support both string and integer IDs</li>
+</ul>
+
+<h4 id="json-schema-dialect">JSON Schema Dialect</h4>
+<p>All <code class="language-plaintext highlighter-rouge">inputSchema</code> and <code class="language-plaintext highlighter-rouge">outputSchema</code> use JSON Schema 2020-12 as default dialect (SEP-1613).</p>
+
+<h3 id="lifecycle-management">Lifecycle Management</h3>
+
+<h4 id="initialization-sequence">Initialization Sequence</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Client                          Server
+  │                               │
+  │─── initialize ───────────────▶│
+  │    {protocolVersion,          │
+  │     capabilities,             │
+  │     clientInfo}               │
+  │                               │
+  │◀── InitializeResult ─────────│
+  │    {protocolVersion,          │
+  │     capabilities,             │
+  │     serverInfo,               │
+  │     instructions?}            │
+  │                               │
+  │─── initialized ──────────────▶│
+  │    (notification)             │
+  │                               │
+  │       [Operation Phase]       │
+  │                               │
+</code></pre></div></div>
+
+<h4 id="pre-initialization-rejection">Pre-initialization Rejection</h4>
+<ul>
+  <li>Server MUST reject all requests before <code class="language-plaintext highlighter-rouge">initialized</code> notification</li>
+  <li>Return error code <code class="language-plaintext highlighter-rouge">-32600</code> (Invalid Request) with message indicating server not initialized</li>
+</ul>
+
+<h4 id="protocol-version-validation">Protocol Version Validation</h4>
+<ul>
+  <li>Only accept <code class="language-plaintext highlighter-rouge">protocolVersion: "2025-11-25"</code></li>
+  <li>Return error for unsupported versions</li>
+</ul>
+
+<h3 id="capability-negotiation">Capability Negotiation</h3>
+
+<h4 id="server-capabilities-advertise-in-initializeresult">Server Capabilities (advertise in InitializeResult)</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+  <span class="nl">capabilities</span><span class="p">:</span> <span class="p">{</span>
+    <span class="na">tools</span><span class="p">:</span> <span class="p">{</span>
+      <span class="na">listChanged</span><span class="p">:</span> <span class="kc">true</span>  <span class="c1">// Support tools/listChanged notification</span>
+    <span class="p">},</span>
+    <span class="na">logging</span><span class="p">:</span> <span class="p">{},</span>         <span class="c1">// Logging support enabled</span>
+    <span class="na">completions</span><span class="p">:</span> <span class="p">{},</span>     <span class="c1">// Completion support enabled</span>
+    <span class="na">experimental</span><span class="p">:</span> <span class="p">{</span>
+      <span class="dl">"</span><span class="s2">oauth-m2m</span><span class="dl">"</span><span class="p">:</span> <span class="p">{}</span>    <span class="c1">// M2M OAuth extension</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+  <span class="nx">serverInfo</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nl">name</span><span class="p">:</span> <span class="dl">"</span><span class="s2">mcp-reference-server</span><span class="dl">"</span><span class="p">,</span>
+    <span class="nx">version</span><span class="p">:</span> <span class="dl">"</span><span class="s2">1.0.0</span><span class="dl">"</span><span class="p">,</span>
+    <span class="nx">description</span><span class="p">:</span> <span class="dl">"</span><span class="s2">MCP 2025-11-25 Reference Implementation</span><span class="dl">"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h4 id="client-capability-recognition">Client Capability Recognition</h4>
+<ul>
+  <li>Recognize <code class="language-plaintext highlighter-rouge">roots.listChanged</code> capability</li>
+  <li>Only use features client advertised</li>
+  <li>Store capabilities for session duration</li>
+</ul>
+
+<h3 id="tools-implementation">Tools Implementation</h3>
+
+<h4 id="tool-definition-schema">Tool Definition Schema</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">interface</span> <span class="nx">Tool</span> <span class="p">{</span>
+  <span class="nl">name</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>              <span class="c1">// lowercase_with_underscores</span>
+  <span class="nl">title</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>            <span class="c1">// Human-readable display name</span>
+  <span class="nl">description</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>       <span class="c1">// Clear description for LLM</span>
+  <span class="nl">inputSchema</span><span class="p">:</span> <span class="nx">JsonSchema</span><span class="p">;</span>   <span class="c1">// JSON Schema 2020-12</span>
+  <span class="nl">outputSchema</span><span class="p">?:</span> <span class="nx">JsonSchema</span><span class="p">;</span> <span class="c1">// Optional result schema</span>
+  <span class="nl">annotations</span><span class="p">?:</span> <span class="p">{</span>
+    <span class="nx">readOnlyHint</span><span class="p">?:</span> <span class="nx">boolean</span><span class="p">;</span>      <span class="c1">// No side effects</span>
+    <span class="nl">destructiveHint</span><span class="p">?:</span> <span class="nx">boolean</span><span class="p">;</span>   <span class="c1">// Modifies data</span>
+    <span class="nl">idempotentHint</span><span class="p">?:</span> <span class="nx">boolean</span><span class="p">;</span>    <span class="c1">// Safe to repeat</span>
+    <span class="nl">openWorldHint</span><span class="p">?:</span> <span class="nx">boolean</span><span class="p">;</span>     <span class="c1">// Accesses external services</span>
+  <span class="p">};</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h4 id="sample-tools">Sample Tools</h4>
+
+<h5 id="1-calculator-calculate">1. Calculator (<code class="language-plaintext highlighter-rouge">calculate</code>)</h5>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+  <span class="nl">name</span><span class="p">:</span> <span class="dl">"</span><span class="s2">calculate</span><span class="dl">"</span><span class="p">,</span>
+  <span class="nx">title</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Calculator</span><span class="dl">"</span><span class="p">,</span>
+  <span class="nx">description</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Perform basic arithmetic operations. Supports add, subtract, multiply, divide. Example: calculate({operation: 'add', a: 5, b: 3}) returns 8.</span><span class="dl">"</span><span class="p">,</span>
+  <span class="nx">inputSchema</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nl">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">object</span><span class="dl">"</span><span class="p">,</span>
+    <span class="nx">properties</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nl">operation</span><span class="p">:</span> <span class="p">{</span>
+        <span class="na">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">string</span><span class="dl">"</span><span class="p">,</span>
+        <span class="na">enum</span><span class="p">:</span> <span class="p">[</span><span class="dl">"</span><span class="s2">add</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">subtract</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">multiply</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">divide</span><span class="dl">"</span><span class="p">],</span>
+        <span class="na">description</span><span class="p">:</span> <span class="dl">"</span><span class="s2">The arithmetic operation to perform</span><span class="dl">"</span>
+      <span class="p">},</span>
+      <span class="nx">a</span><span class="p">:</span> <span class="p">{</span> <span class="nl">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">number</span><span class="dl">"</span><span class="p">,</span> <span class="nx">description</span><span class="p">:</span> <span class="dl">"</span><span class="s2">First operand</span><span class="dl">"</span> <span class="p">},</span>
+      <span class="nx">b</span><span class="p">:</span> <span class="p">{</span> <span class="nl">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">number</span><span class="dl">"</span><span class="p">,</span> <span class="nx">description</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Second operand</span><span class="dl">"</span> <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="nx">required</span><span class="p">:</span> <span class="p">[</span><span class="dl">"</span><span class="s2">operation</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">a</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">b</span><span class="dl">"</span><span class="p">]</span>
+  <span class="p">},</span>
+  <span class="nx">outputSchema</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nl">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">object</span><span class="dl">"</span><span class="p">,</span>
+    <span class="nx">properties</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nl">result</span><span class="p">:</span> <span class="p">{</span> <span class="na">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">number</span><span class="dl">"</span> <span class="p">},</span>
+      <span class="nx">expression</span><span class="p">:</span> <span class="p">{</span> <span class="nl">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">string</span><span class="dl">"</span> <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="nx">required</span><span class="p">:</span> <span class="p">[</span><span class="dl">"</span><span class="s2">result</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">expression</span><span class="dl">"</span><span class="p">]</span>
+  <span class="p">},</span>
+  <span class="nx">annotations</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nl">readOnlyHint</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="nx">idempotentHint</span><span class="p">:</span> <span class="kc">true</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h5 id="2-dice-roller-roll_dice">2. Dice Roller (<code class="language-plaintext highlighter-rouge">roll_dice</code>)</h5>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+  <span class="nl">name</span><span class="p">:</span> <span class="dl">"</span><span class="s2">roll_dice</span><span class="dl">"</span><span class="p">,</span>
+  <span class="nx">title</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Dice Roller</span><span class="dl">"</span><span class="p">,</span>
+  <span class="nx">description</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Roll dice using standard notation. Examples: '2d6' rolls two 6-sided dice, '1d20+5' rolls one d20 and adds 5.</span><span class="dl">"</span><span class="p">,</span>
+  <span class="nx">inputSchema</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nl">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">object</span><span class="dl">"</span><span class="p">,</span>
+    <span class="nx">properties</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nl">notation</span><span class="p">:</span> <span class="p">{</span>
+        <span class="na">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">string</span><span class="dl">"</span><span class="p">,</span>
+        <span class="na">pattern</span><span class="p">:</span> <span class="dl">"</span><span class="s2">^</span><span class="se">\\</span><span class="s2">d+d</span><span class="se">\\</span><span class="s2">d+(</span><span class="se">\\</span><span class="s2">+</span><span class="se">\\</span><span class="s2">d+)?$</span><span class="dl">"</span><span class="p">,</span>
+        <span class="na">description</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Dice notation (e.g., '2d6', '1d20+5')</span><span class="dl">"</span>
+      <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="nx">required</span><span class="p">:</span> <span class="p">[</span><span class="dl">"</span><span class="s2">notation</span><span class="dl">"</span><span class="p">]</span>
+  <span class="p">},</span>
+  <span class="nx">outputSchema</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nl">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">object</span><span class="dl">"</span><span class="p">,</span>
+    <span class="nx">properties</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nl">rolls</span><span class="p">:</span> <span class="p">{</span> <span class="na">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">array</span><span class="dl">"</span><span class="p">,</span> <span class="na">items</span><span class="p">:</span> <span class="p">{</span> <span class="na">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">number</span><span class="dl">"</span> <span class="p">}</span> <span class="p">},</span>
+      <span class="nx">modifier</span><span class="p">:</span> <span class="p">{</span> <span class="nl">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">number</span><span class="dl">"</span> <span class="p">},</span>
+      <span class="nx">total</span><span class="p">:</span> <span class="p">{</span> <span class="nl">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">number</span><span class="dl">"</span> <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="nx">required</span><span class="p">:</span> <span class="p">[</span><span class="dl">"</span><span class="s2">rolls</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">total</span><span class="dl">"</span><span class="p">]</span>
+  <span class="p">},</span>
+  <span class="nx">annotations</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nl">readOnlyHint</span><span class="p">:</span> <span class="kc">true</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h5 id="3-fortune-teller-tell_fortune">3. Fortune Teller (<code class="language-plaintext highlighter-rouge">tell_fortune</code>)</h5>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+  <span class="nl">name</span><span class="p">:</span> <span class="dl">"</span><span class="s2">tell_fortune</span><span class="dl">"</span><span class="p">,</span>
+  <span class="nx">title</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Fortune Teller</span><span class="dl">"</span><span class="p">,</span>
+  <span class="nx">description</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Receive a mystical fortune reading. Choose a category for themed fortunes.</span><span class="dl">"</span><span class="p">,</span>
+  <span class="nx">inputSchema</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nl">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">object</span><span class="dl">"</span><span class="p">,</span>
+    <span class="nx">properties</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nl">category</span><span class="p">:</span> <span class="p">{</span>
+        <span class="na">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">string</span><span class="dl">"</span><span class="p">,</span>
+        <span class="na">enum</span><span class="p">:</span> <span class="p">[</span><span class="dl">"</span><span class="s2">love</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">career</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">health</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">wealth</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">general</span><span class="dl">"</span><span class="p">],</span>
+        <span class="na">description</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Fortune category</span><span class="dl">"</span><span class="p">,</span>
+        <span class="na">default</span><span class="p">:</span> <span class="dl">"</span><span class="s2">general</span><span class="dl">"</span>
+      <span class="p">},</span>
+      <span class="nx">mood</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nl">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">string</span><span class="dl">"</span><span class="p">,</span>
+        <span class="kr">enum</span><span class="p">:</span> <span class="p">[</span><span class="dl">"</span><span class="s2">optimistic</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">mysterious</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">humorous</span><span class="dl">"</span><span class="p">],</span>
+        <span class="nx">description</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Tone of the fortune</span><span class="dl">"</span><span class="p">,</span>
+        <span class="k">default</span><span class="p">:</span> <span class="dl">"</span><span class="s2">mysterious</span><span class="dl">"</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+  <span class="nx">annotations</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nl">readOnlyHint</span><span class="p">:</span> <span class="kc">true</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h4 id="tool-operations">Tool Operations</h4>
+
+<h5 id="toolslist"><code class="language-plaintext highlighter-rouge">tools/list</code></h5>
+<ul>
+  <li>Request: <code class="language-plaintext highlighter-rouge">{ cursor?: string }</code></li>
+  <li>Response: <code class="language-plaintext highlighter-rouge">{ tools: Tool[], nextCursor?: string }</code></li>
+  <li>Page size: 50 items (configurable)</li>
+  <li>Cursor: opaque string, stable across requests</li>
+</ul>
+
+<h5 id="toolscall"><code class="language-plaintext highlighter-rouge">tools/call</code></h5>
+<ul>
+  <li>Request: <code class="language-plaintext highlighter-rouge">{ name: string, arguments?: object, _meta?: { progressToken?: string | number } }</code></li>
+  <li>Response: <code class="language-plaintext highlighter-rouge">{ content: Content[], isError?: boolean }</code></li>
+  <li>Validate arguments against <code class="language-plaintext highlighter-rouge">inputSchema</code></li>
+  <li>Support progress notifications via <code class="language-plaintext highlighter-rouge">progressToken</code></li>
+</ul>
+
+<h5 id="notificationstoolslistchanged"><code class="language-plaintext highlighter-rouge">notifications/tools/listChanged</code></h5>
+<ul>
+  <li>Emit when tools added/removed/modified</li>
+  <li>Only if <code class="language-plaintext highlighter-rouge">tools.listChanged</code> capability advertised</li>
+</ul>
+
+<h4 id="tool-result-content-types">Tool Result Content Types</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">type</span> <span class="nx">Content</span> <span class="o">=</span> <span class="nx">TextContent</span> <span class="o">|</span> <span class="nx">ImageContent</span> <span class="o">|</span> <span class="nx">AudioContent</span> <span class="o">|</span> <span class="nx">EmbeddedResource</span><span class="p">;</span>
+
+<span class="kr">interface</span> <span class="nx">TextContent</span> <span class="p">{</span>
+  <span class="nl">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">text</span><span class="dl">"</span><span class="p">;</span>
+  <span class="nl">text</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">annotations</span><span class="p">?:</span> <span class="nx">ContentAnnotations</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">ImageContent</span> <span class="p">{</span>
+  <span class="nl">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">image</span><span class="dl">"</span><span class="p">;</span>
+  <span class="nl">data</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>  <span class="c1">// base64</span>
+  <span class="nl">mimeType</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">annotations</span><span class="p">?:</span> <span class="nx">ContentAnnotations</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">AudioContent</span> <span class="p">{</span>
+  <span class="nl">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">audio</span><span class="dl">"</span><span class="p">;</span>
+  <span class="nl">data</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>  <span class="c1">// base64</span>
+  <span class="nl">mimeType</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">annotations</span><span class="p">?:</span> <span class="nx">ContentAnnotations</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">EmbeddedResource</span> <span class="p">{</span>
+  <span class="nl">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">resource</span><span class="dl">"</span><span class="p">;</span>
+  <span class="nl">resource</span><span class="p">:</span> <span class="nx">Resource</span><span class="p">;</span>
+  <span class="nl">annotations</span><span class="p">?:</span> <span class="nx">ContentAnnotations</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">ContentAnnotations</span> <span class="p">{</span>
+  <span class="nl">audience</span><span class="p">?:</span> <span class="p">(</span><span class="dl">"</span><span class="s2">user</span><span class="dl">"</span> <span class="o">|</span> <span class="dl">"</span><span class="s2">assistant</span><span class="dl">"</span><span class="p">)[];</span>
+  <span class="nl">priority</span><span class="p">?:</span> <span class="kr">number</span><span class="p">;</span>  <span class="c1">// 0-1</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="error-handling">Error Handling</h3>
+
+<h4 id="standard-json-rpc-error-codes">Standard JSON-RPC Error Codes</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>Code</th>
+      <th>Name</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>-32700</td>
+      <td>Parse Error</td>
+      <td>Invalid JSON</td>
+    </tr>
+    <tr>
+      <td>-32600</td>
+      <td>Invalid Request</td>
+      <td>Not a valid request object</td>
+    </tr>
+    <tr>
+      <td>-32601</td>
+      <td>Method Not Found</td>
+      <td>Method doesn’t exist</td>
+    </tr>
+    <tr>
+      <td>-32602</td>
+      <td>Invalid Params</td>
+      <td>Invalid method parameters</td>
+    </tr>
+    <tr>
+      <td>-32603</td>
+      <td>Internal Error</td>
+      <td>Internal JSON-RPC error</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="tool-execution-errors-sep-1303">Tool Execution Errors (SEP-1303)</h4>
+
+<p>Input validation errors return as tool results with <code class="language-plaintext highlighter-rouge">isError: true</code>:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// CORRECT - enables LLM self-correction</span>
+<span class="p">{</span>
+  <span class="nl">content</span><span class="p">:</span> <span class="p">[{</span>
+    <span class="na">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">text</span><span class="dl">"</span><span class="p">,</span>
+    <span class="na">text</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Invalid operation 'modulo'. Supported: add, subtract, multiply, divide</span><span class="dl">"</span>
+  <span class="p">}],</span>
+  <span class="nx">isError</span><span class="p">:</span> <span class="kc">true</span>
+<span class="p">}</span>
+
+<span class="c1">// WRONG - protocol error prevents LLM correction</span>
+<span class="p">{</span>
+  <span class="na">error</span><span class="p">:</span> <span class="p">{</span>
+    <span class="na">code</span><span class="p">:</span> <span class="o">-</span><span class="mi">32602</span><span class="p">,</span>
+    <span class="na">message</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Invalid params</span><span class="dl">"</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h4 id="error-response-best-practices">Error Response Best Practices</h4>
+<ul>
+  <li>Never expose internal stack traces</li>
+  <li>Provide actionable error messages</li>
+  <li>Include relevant context in error data</li>
+  <li>Log full details server-side</li>
+</ul>
+
+<hr />
+
+<h2 id="p1-transport-layer--utilities">P1: Transport Layer &amp; Utilities</h2>
+
+<h3 id="stdio-transport">stdio Transport</h3>
+
+<h4 id="message-framing">Message Framing</h4>
+<ul>
+  <li>Newline-delimited JSON</li>
+  <li>One complete JSON object per line</li>
+  <li>UTF-8 encoding required</li>
+  <li>No length prefix needed</li>
+</ul>
+
+<h4 id="stream-usage">Stream Usage</h4>
+<p>| Stream | Purpose |
+|——–|———|
+| stdin | Server reads client messages |
+| stdout | Server writes responses/notifications |
+| stderr | Server writes log output (all severity levels) |</p>
+
+<h4 id="process-lifecycle">Process Lifecycle</h4>
+<ol>
+  <li>Server starts, waits for <code class="language-plaintext highlighter-rouge">initialize</code> on stdin</li>
+  <li>Server MUST NOT write to stdout before receiving <code class="language-plaintext highlighter-rouge">initialize</code></li>
+  <li>On shutdown: exit cleanly with code 0</li>
+  <li>On error: may exit with non-zero code</li>
+</ol>
+
+<h4 id="implementation-requirements">Implementation Requirements</h4>
+<ul>
+  <li>Buffer stdin reads appropriately</li>
+  <li>Flush stdout after each message</li>
+  <li>Handle SIGTERM/SIGINT gracefully</li>
+  <li>Clean up resources on exit</li>
+</ul>
+
+<h3 id="streamable-http-transport">Streamable HTTP Transport</h3>
+
+<h4 id="endpoint-design">Endpoint Design</h4>
+<p>Single endpoint (e.g., <code class="language-plaintext highlighter-rouge">/mcp</code>) supporting:</p>
+<ul>
+  <li><strong>POST</strong>: Client-to-server messages</li>
+  <li><strong>GET</strong>: Open SSE stream for server-initiated messages</li>
+</ul>
+
+<h4 id="required-headers">Required Headers</h4>
+
+<p><strong>Request Headers:</strong></p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Content-Type: application/json (POST)
+Accept: application/json, text/event-stream
+MCP-Protocol-Version: 2025-11-25
+MCP-Session-Id: &lt;session-id&gt; (after initialization)
+Authorization: Bearer &lt;token&gt; (when authenticated)
+</code></pre></div></div>
+
+<p><strong>Response Headers:</strong></p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Content-Type: application/json | text/event-stream
+MCP-Session-Id: &lt;session-id&gt; (on InitializeResult)
+</code></pre></div></div>
+
+<h4 id="session-management">Session Management</h4>
+<ul>
+  <li>Server assigns session ID on initialization</li>
+  <li>Session ID: globally unique, cryptographically secure</li>
+  <li>Character set: visible ASCII (0x21-0x7E)</li>
+  <li>Client includes session ID in subsequent requests</li>
+  <li>Server validates session ID on each request</li>
+</ul>
+
+<h4 id="post-request-handling">POST Request Handling</h4>
+<ul>
+  <li>Request body: JSON-RPC message</li>
+  <li>Response:
+    <ul>
+      <li>Requests → JSON-RPC response (result or error)</li>
+      <li>Notifications → HTTP 202 Accepted (empty body)</li>
+    </ul>
+  </li>
+</ul>
+
+<h4 id="get-request-sse-stream">GET Request (SSE Stream)</h4>
+<ul>
+  <li>Client opens SSE stream for server-initiated messages</li>
+  <li>Event format: <code class="language-plaintext highlighter-rouge">data: &lt;json-rpc-message&gt;\n\n</code></li>
+  <li>Event IDs encode stream position for replay (SEP-1699)</li>
+  <li>Support reconnection with <code class="language-plaintext highlighter-rouge">Last-Event-Id</code> header</li>
+</ul>
+
+<h4 id="sse-reconnection-with-replay">SSE Reconnection with Replay</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Event ID format: "&lt;session&gt;:&lt;sequence&gt;"</span>
+<span class="c1">// Example: "abc123:42"</span>
+
+<span class="c1">// On reconnect, client sends Last-Event-Id header</span>
+<span class="c1">// Server replays events after that sequence number</span>
+
+<span class="kr">interface</span> <span class="nx">SSEEvent</span> <span class="p">{</span>
+  <span class="nl">id</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>          <span class="c1">// session:sequence</span>
+  <span class="nl">event</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>      <span class="c1">// event type</span>
+  <span class="nl">data</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>        <span class="c1">// JSON-RPC message</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h4 id="security-requirements">Security Requirements</h4>
+<ul>
+  <li>HTTPS required in production</li>
+  <li>Validate Origin header (403 for invalid)</li>
+  <li>Implement CORS appropriately</li>
+  <li>Rate limiting deferred to reverse proxy</li>
+</ul>
+
+<h4 id="stateless-mode">Stateless Mode</h4>
+<p>Server MAY operate without sessions for horizontal scaling:</p>
+<ul>
+  <li>No <code class="language-plaintext highlighter-rouge">MCP-Session-Id</code> header</li>
+  <li>Each request independent</li>
+  <li>No SSE (no server-initiated messages)</li>
+  <li>Suitable for simple tool-only servers</li>
+  <li>Configurable via <code class="language-plaintext highlighter-rouge">MCP_STATELESS_MODE=true</code></li>
+</ul>
+
+<h3 id="pagination">Pagination</h3>
+
+<h4 id="requestresponse-pattern">Request/Response Pattern</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Request</span>
+<span class="p">{</span> <span class="nl">cursor</span><span class="p">?:</span> <span class="kr">string</span> <span class="p">}</span>
+
+<span class="c1">// Response</span>
+<span class="p">{</span>
+  <span class="na">items</span><span class="p">:</span> <span class="nx">T</span><span class="p">[],</span>
+  <span class="nx">nextCursor</span><span class="p">?:</span> <span class="kr">string</span>  <span class="c1">// Absent = last page</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h4 id="implementation">Implementation</h4>
+<ul>
+  <li>Cursor format: opaque to client, server-defined</li>
+  <li>May encode: offset, timestamp, ID, etc.</li>
+  <li>Default page size: 50 items</li>
+  <li>Maximum page size: enforced (configurable)</li>
+  <li>Cursors stable across requests</li>
+</ul>
+
+<h4 id="paginated-methods-phase-1">Paginated Methods (Phase 1)</h4>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">tools/list</code></li>
+</ul>
+
+<h3 id="progress-notifications">Progress Notifications</h3>
+
+<h4 id="progress-token-flow">Progress Token Flow</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Client                          Server
+  │                               │
+  │─── tools/call ───────────────▶│
+  │    {name, arguments,          │
+  │     _meta: {progressToken}}   │
+  │                               │
+  │◀── notifications/progress ───│
+  │    {progressToken, progress,  │
+  │     total?, message?}         │
+  │    ... (multiple)             │
+  │                               │
+  │◀── tools/call response ──────│
+  │    {content, isError?}        │
+</code></pre></div></div>
+
+<h4 id="progress-notification-structure">Progress Notification Structure</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+  <span class="nl">progressToken</span><span class="p">:</span> <span class="kr">string</span> <span class="o">|</span> <span class="kr">number</span><span class="p">;</span>  <span class="c1">// From request _meta</span>
+  <span class="nl">progress</span><span class="p">:</span> <span class="kr">number</span><span class="p">;</span>                <span class="c1">// Current value</span>
+  <span class="nl">total</span><span class="p">?:</span> <span class="kr">number</span><span class="p">;</span>                  <span class="c1">// For percentage (optional)</span>
+  <span class="nl">message</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>                <span class="c1">// Status message</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h4 id="rate-limiting">Rate Limiting</h4>
+<ul>
+  <li>Configurable throttle interval: 100ms default</li>
+  <li>Debounce rapid updates</li>
+  <li>Maximum 10 updates/second per request</li>
+  <li>Configure via <code class="language-plaintext highlighter-rouge">MCP_PROGRESS_INTERVAL_MS</code></li>
+</ul>
+
+<hr />
+
+<h2 id="p2-oauth-21-authorization">P2: OAuth 2.1 Authorization</h2>
+
+<h3 id="overview-1">Overview</h3>
+
+<h4 id="role-mapping">Role Mapping</h4>
+<p>| MCP Role | OAuth Role |
+|———-|————|
+| MCP Server | Resource Server (validates tokens) |
+| MCP Client | OAuth Client (obtains tokens) |
+| Auth Server | Authorization Server (issues tokens) |
+| User | Resource Owner |</p>
+
+<h4 id="supported-flow">Supported Flow</h4>
+<p>Authorization Code with PKCE (interactive users)</p>
+
+<h3 id="authorization-server-discovery">Authorization Server Discovery</h3>
+
+<h4 id="protected-resource-metadata-rfc-9728">Protected Resource Metadata (RFC 9728)</h4>
+
+<p>Serve at: <code class="language-plaintext highlighter-rouge">/.well-known/oauth-protected-resource</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"resource"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://mcp-server.example.com"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"authorization_servers"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="s2">"https://auth0.example.com"</span><span class="w">
+  </span><span class="p">],</span><span class="w">
+  </span><span class="nl">"scopes_supported"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="s2">"tools:read"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"tools:execute"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"logging:write"</span><span class="w">
+  </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h4 id="www-authenticate-on-401">WWW-Authenticate on 401</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer realm="mcp",
+  resource_metadata="https://mcp-server.example.com/.well-known/oauth-protected-resource"
+</code></pre></div></div>
+
+<h3 id="client-registration">Client Registration</h3>
+
+<h4 id="priority-order">Priority Order</h4>
+<ol>
+  <li><strong>Pre-registration</strong> (preferred for production)</li>
+  <li><strong>Client ID Metadata Documents (CIMD)</strong> - SEP-991</li>
+  <li><strong>Dynamic Client Registration</strong> (RFC 7591)</li>
+  <li><strong>Manual Configuration</strong> (fallback)</li>
+</ol>
+
+<h4 id="cimd-structure-for-public-clients">CIMD Structure (for public clients)</h4>
+
+<p>Client hosts JSON at its <code class="language-plaintext highlighter-rouge">client_id</code> URL:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"client_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://my-mcp-client.example.com/client.json"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"client_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"My MCP Client"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"redirect_uris"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"https://my-mcp-client.example.com/callback"</span><span class="p">],</span><span class="w">
+  </span><span class="nl">"grant_types"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"authorization_code"</span><span class="p">],</span><span class="w">
+  </span><span class="nl">"response_types"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"code"</span><span class="p">],</span><span class="w">
+  </span><span class="nl">"token_endpoint_auth_method"</span><span class="p">:</span><span class="w"> </span><span class="s2">"none"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"scope"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tools:read tools:execute"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h3 id="authorization-code-flow-with-pkce">Authorization Code Flow with PKCE</h3>
+
+<h4 id="complete-flow">Complete Flow</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌─────────────┐                               ┌─────────────┐
+│  MCP Client │                               │ Auth Server │
+└──────┬──────┘                               └──────┬──────┘
+       │                                              │
+       │ 1. Generate PKCE (verifier + challenge)      │
+       │                                              │
+       │ 2. Open browser to /authorize ──────────────▶│
+       │    ?response_type=code                       │
+       │    &amp;client_id=...                           │
+       │    &amp;redirect_uri=...                        │
+       │    &amp;scope=...                               │
+       │    &amp;state=...                               │
+       │    &amp;code_challenge=...                      │
+       │    &amp;code_challenge_method=S256              │
+       │    &amp;resource=https://mcp-server...          │
+       │                                              │
+       │                    3. User authenticates     │
+       │                       &amp; consents             │
+       │                                              │
+       │◀───────────── 4. Redirect with code ────────│
+       │    ?code=...&amp;state=...                       │
+       │                                              │
+       │ 5. POST /token ─────────────────────────────▶│
+       │    grant_type=authorization_code             │
+       │    code=...                                  │
+       │    redirect_uri=...                          │
+       │    client_id=...                             │
+       │    code_verifier=...                         │
+       │    resource=https://mcp-server...            │
+       │                                              │
+       │◀────────────── 6. Token Response ───────────│
+       │    {access_token, token_type,                │
+       │     expires_in, refresh_token?, scope}       │
+       │                                              │
+       │ 7. API Request with Bearer token ───────────▶│ MCP Server
+       │                                              │
+</code></pre></div></div>
+
+<h3 id="pkce-implementation">PKCE Implementation</h3>
+
+<h4 id="code-verifier-generation">Code Verifier Generation</h4>
+<ul>
+  <li>Length: 43-128 characters</li>
+  <li>Characters: <code class="language-plaintext highlighter-rouge">[A-Z] [a-z] [0-9] - . _ ~</code></li>
+  <li>MUST be cryptographically random</li>
+  <li>Generate new verifier for each authorization</li>
+</ul>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">function</span> <span class="nx">generateCodeVerifier</span><span class="p">():</span> <span class="kr">string</span> <span class="p">{</span>
+  <span class="kd">const</span> <span class="nx">charset</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~</span><span class="dl">'</span><span class="p">;</span>
+  <span class="kd">const</span> <span class="nx">length</span> <span class="o">=</span> <span class="mi">64</span><span class="p">;</span>  <span class="c1">// Between 43-128</span>
+  <span class="kd">const</span> <span class="nx">randomBytes</span> <span class="o">=</span> <span class="nx">crypto</span><span class="p">.</span><span class="nx">getRandomValues</span><span class="p">(</span><span class="k">new</span> <span class="nb">Uint8Array</span><span class="p">(</span><span class="nx">length</span><span class="p">));</span>
+  <span class="k">return</span> <span class="nb">Array</span><span class="p">.</span><span class="k">from</span><span class="p">(</span><span class="nx">randomBytes</span><span class="p">)</span>
+    <span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">b</span> <span class="o">=&gt;</span> <span class="nx">charset</span><span class="p">[</span><span class="nx">b</span> <span class="o">%</span> <span class="nx">charset</span><span class="p">.</span><span class="nx">length</span><span class="p">])</span>
+    <span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="dl">''</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h4 id="code-challenge-computation">Code Challenge Computation</h4>
+<ul>
+  <li>Method: S256 (SHA-256) - REQUIRED</li>
+  <li>Algorithm: <code class="language-plaintext highlighter-rouge">BASE64URL(SHA256(code_verifier))</code></li>
+  <li>No padding in BASE64URL encoding</li>
+</ul>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">async</span> <span class="kd">function</span> <span class="nx">generateCodeChallenge</span><span class="p">(</span><span class="nx">verifier</span><span class="p">:</span> <span class="kr">string</span><span class="p">):</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="kr">string</span><span class="o">&gt;</span> <span class="p">{</span>
+  <span class="kd">const</span> <span class="nx">encoder</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">TextEncoder</span><span class="p">();</span>
+  <span class="kd">const</span> <span class="nx">data</span> <span class="o">=</span> <span class="nx">encoder</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="nx">verifier</span><span class="p">);</span>
+  <span class="kd">const</span> <span class="nx">hash</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">crypto</span><span class="p">.</span><span class="nx">subtle</span><span class="p">.</span><span class="nx">digest</span><span class="p">(</span><span class="dl">'</span><span class="s1">SHA-256</span><span class="dl">'</span><span class="p">,</span> <span class="nx">data</span><span class="p">);</span>
+  <span class="k">return</span> <span class="nx">base64url</span><span class="p">.</span><span class="nx">encode</span><span class="p">(</span><span class="k">new</span> <span class="nb">Uint8Array</span><span class="p">(</span><span class="nx">hash</span><span class="p">));</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="resource-indicators-rfc-8707">Resource Indicators (RFC 8707)</h3>
+
+<ul>
+  <li>Include <code class="language-plaintext highlighter-rouge">resource</code> parameter in authorization request</li>
+  <li>Include <code class="language-plaintext highlighter-rouge">resource</code> parameter in token request</li>
+  <li>Value: MCP server’s URL</li>
+  <li>Server validates token audience matches resource</li>
+</ul>
+
+<h3 id="scope-management">Scope Management</h3>
+
+<h4 id="defined-scopes">Defined Scopes</h4>
+<p>| Scope | Description |
+|——-|————-|
+| <code class="language-plaintext highlighter-rouge">tools:read</code> | List and describe tools |
+| <code class="language-plaintext highlighter-rouge">tools:execute</code> | Execute tools |
+| <code class="language-plaintext highlighter-rouge">logging:write</code> | Emit log messages |</p>
+
+<h4 id="incremental-consent-sep-835">Incremental Consent (SEP-835)</h4>
+<ul>
+  <li>Request minimal scopes initially</li>
+  <li>Server returns 403 with required scope in <code class="language-plaintext highlighter-rouge">WWW-Authenticate</code></li>
+  <li>Client initiates new authorization for additional scope</li>
+  <li>Retry original request with enhanced token</li>
+</ul>
+
+<h3 id="token-management">Token Management</h3>
+
+<h4 id="access-token-handling">Access Token Handling</h4>
+<ul>
+  <li>Store tokens securely (encrypted at rest)</li>
+  <li>Never log or expose tokens</li>
+  <li>Include in <code class="language-plaintext highlighter-rouge">Authorization: Bearer &lt;token&gt;</code> header only</li>
+  <li>Validate token before each request</li>
+</ul>
+
+<h4 id="token-refresh">Token Refresh</h4>
+<ol>
+  <li>When access token expires (check <code class="language-plaintext highlighter-rouge">expires_in</code>)</li>
+  <li>POST to token_endpoint with <code class="language-plaintext highlighter-rouge">grant_type: refresh_token</code></li>
+  <li>Include <code class="language-plaintext highlighter-rouge">refresh_token</code> and <code class="language-plaintext highlighter-rouge">client_id</code></li>
+  <li>Store new tokens, discard old</li>
+</ol>
+
+<h3 id="auth0-integration-example">Auth0 Integration Example</h3>
+
+<h4 id="environment-configuration">Environment Configuration</h4>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Auth0 Configuration</span>
+<span class="nv">MCP_AUTH0_DOMAIN</span><span class="o">=</span>your-tenant.auth0.com
+<span class="nv">MCP_AUTH0_AUDIENCE</span><span class="o">=</span>https://your-mcp-server.example.com
+<span class="nv">MCP_AUTH0_CLIENT_ID</span><span class="o">=</span>your_client_id
+</code></pre></div></div>
+
+<h4 id="metadata-endpoint-response">Metadata Endpoint Response</h4>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"resource"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://your-mcp-server.example.com"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"authorization_servers"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="s2">"https://your-tenant.auth0.com"</span><span class="w">
+  </span><span class="p">],</span><span class="w">
+  </span><span class="nl">"scopes_supported"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"tools:read"</span><span class="p">,</span><span class="w"> </span><span class="s2">"tools:execute"</span><span class="p">,</span><span class="w"> </span><span class="s2">"logging:write"</span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h3 id="completions">Completions</h3>
+
+<h4 id="completioncomplete-method"><code class="language-plaintext highlighter-rouge">completion/complete</code> Method</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Request</span>
+<span class="p">{</span>
+  <span class="nl">ref</span><span class="p">:</span> <span class="p">{</span>
+    <span class="na">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">ref/prompt</span><span class="dl">"</span> <span class="o">|</span> <span class="dl">"</span><span class="s2">ref/resource</span><span class="dl">"</span><span class="p">,</span>
+    <span class="nx">name</span><span class="p">?:</span> <span class="kr">string</span><span class="p">,</span>
+    <span class="nx">uri</span><span class="p">?:</span> <span class="kr">string</span>
+  <span class="p">},</span>
+  <span class="nx">argument</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nl">name</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span>   <span class="c1">// Argument name</span>
+    <span class="nx">value</span><span class="p">:</span> <span class="kr">string</span>   <span class="c1">// Partial value</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// Response</span>
+<span class="p">{</span>
+  <span class="na">completion</span><span class="p">:</span> <span class="p">{</span>
+    <span class="na">values</span><span class="p">:</span> <span class="kr">string</span><span class="p">[],</span>    <span class="c1">// Suggestions</span>
+    <span class="nx">total</span><span class="p">?:</span> <span class="kr">number</span><span class="p">,</span>      <span class="c1">// Total available</span>
+    <span class="nx">hasMore</span><span class="p">?:</span> <span class="nx">boolean</span>    <span class="c1">// More available</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h4 id="fortune-teller-completions">Fortune Teller Completions</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// For category argument, return matching categories</span>
+<span class="kd">const</span> <span class="nx">categories</span> <span class="o">=</span> <span class="p">[</span><span class="dl">"</span><span class="s2">love</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">career</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">health</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">wealth</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">general</span><span class="dl">"</span><span class="p">];</span>
+
+<span class="kd">function</span> <span class="nx">getCompletions</span><span class="p">(</span><span class="nx">argName</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">partial</span><span class="p">:</span> <span class="kr">string</span><span class="p">):</span> <span class="kr">string</span><span class="p">[]</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nx">argName</span> <span class="o">===</span> <span class="dl">"</span><span class="s2">category</span><span class="dl">"</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">categories</span><span class="p">.</span><span class="nx">filter</span><span class="p">(</span><span class="nx">c</span> <span class="o">=&gt;</span> <span class="nx">c</span><span class="p">.</span><span class="nx">startsWith</span><span class="p">(</span><span class="nx">partial</span><span class="p">.</span><span class="nx">toLowerCase</span><span class="p">()));</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nx">argName</span> <span class="o">===</span> <span class="dl">"</span><span class="s2">mood</span><span class="dl">"</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="p">[</span><span class="dl">"</span><span class="s2">optimistic</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">mysterious</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">humorous</span><span class="dl">"</span><span class="p">]</span>
+      <span class="p">.</span><span class="nx">filter</span><span class="p">(</span><span class="nx">m</span> <span class="o">=&gt;</span> <span class="nx">m</span><span class="p">.</span><span class="nx">startsWith</span><span class="p">(</span><span class="nx">partial</span><span class="p">.</span><span class="nx">toLowerCase</span><span class="p">()));</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="p">[];</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="logging">Logging</h3>
+
+<h4 id="log-levels-rfc-5424">Log Levels (RFC 5424)</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>Level</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>debug</td>
+      <td>Detailed debugging</td>
+    </tr>
+    <tr>
+      <td>info</td>
+      <td>General information</td>
+    </tr>
+    <tr>
+      <td>notice</td>
+      <td>Normal but significant</td>
+    </tr>
+    <tr>
+      <td>warning</td>
+      <td>Warning conditions</td>
+    </tr>
+    <tr>
+      <td>error</td>
+      <td>Error conditions</td>
+    </tr>
+    <tr>
+      <td>critical</td>
+      <td>Critical conditions</td>
+    </tr>
+    <tr>
+      <td>alert</td>
+      <td>Immediate action required</td>
+    </tr>
+    <tr>
+      <td>emergency</td>
+      <td>System unusable</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="loggingsetlevel-method"><code class="language-plaintext highlighter-rouge">logging/setLevel</code> Method</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Request</span>
+<span class="p">{</span> <span class="nl">level</span><span class="p">:</span> <span class="dl">"</span><span class="s2">debug</span><span class="dl">"</span> <span class="o">|</span> <span class="dl">"</span><span class="s2">info</span><span class="dl">"</span> <span class="o">|</span> <span class="dl">"</span><span class="s2">notice</span><span class="dl">"</span> <span class="o">|</span> <span class="dl">"</span><span class="s2">warning</span><span class="dl">"</span> <span class="o">|</span> <span class="dl">"</span><span class="s2">error</span><span class="dl">"</span> <span class="o">|</span> <span class="dl">"</span><span class="s2">critical</span><span class="dl">"</span> <span class="o">|</span> <span class="dl">"</span><span class="s2">alert</span><span class="dl">"</span> <span class="o">|</span> <span class="dl">"</span><span class="s2">emergency</span><span class="dl">"</span> <span class="p">}</span>
+
+<span class="c1">// Server filters logs at or above this level</span>
+<span class="c1">// Default level: "info"</span>
+</code></pre></div></div>
+
+<h4 id="notificationsmessage"><code class="language-plaintext highlighter-rouge">notifications/message</code></h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+  <span class="nl">level</span><span class="p">:</span> <span class="nx">LogLevel</span><span class="p">,</span>
+  <span class="nx">logger</span><span class="p">?:</span> <span class="kr">string</span><span class="p">,</span>    <span class="c1">// Logger name</span>
+  <span class="nx">data</span><span class="p">?:</span> <span class="kr">any</span><span class="p">,</span>         <span class="c1">// Structured data</span>
+  <span class="nx">message</span><span class="p">:</span> <span class="kr">string</span>     <span class="c1">// Log message</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="p3-extensions-framework">P3: Extensions Framework</h2>
+
+<h3 id="extension-naming">Extension Naming</h3>
+<ul>
+  <li>Format: <code class="language-plaintext highlighter-rouge">namespace/extension-name</code></li>
+  <li>Example: <code class="language-plaintext highlighter-rouge">anthropic/oauth-m2m</code></li>
+  <li>Custom extensions use organization namespace</li>
+</ul>
+
+<h3 id="extension-negotiation">Extension Negotiation</h3>
+
+<p>During initialization:</p>
+<ol>
+  <li>Client advertises in <code class="language-plaintext highlighter-rouge">capabilities.experimental</code></li>
+  <li>Server responds with supported extensions</li>
+  <li>Only mutually supported extensions enabled</li>
+</ol>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Client capabilities</span>
+<span class="p">{</span>
+  <span class="nl">experimental</span><span class="p">:</span> <span class="p">{</span>
+    <span class="dl">"</span><span class="s2">oauth-m2m</span><span class="dl">"</span><span class="p">:</span> <span class="p">{}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// Server capabilities</span>
+<span class="p">{</span>
+  <span class="na">experimental</span><span class="p">:</span> <span class="p">{</span>
+    <span class="dl">"</span><span class="s2">oauth-m2m</span><span class="dl">"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="na">supported_grant_types</span><span class="p">:</span> <span class="p">[</span><span class="dl">"</span><span class="s2">client_credentials</span><span class="dl">"</span><span class="p">]</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="m2m-oauth-extension-sep-1046">M2M OAuth Extension (SEP-1046)</h3>
+
+<h4 id="purpose-1">Purpose</h4>
+<p>Machine-to-machine authentication for autonomous agents and services without human user interaction.</p>
+
+<h4 id="use-cases">Use Cases</h4>
+<ul>
+  <li>Scheduled agent jobs</li>
+  <li>Service-to-service communication</li>
+  <li>Background automation</li>
+  <li>Headless agent systems</li>
+</ul>
+
+<h4 id="client-credentials-flow">Client Credentials Flow</h4>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>┌─────────────┐                               ┌─────────────┐
+│  M2M Client │                               │ Auth Server │
+└──────┬──────┘                               └──────┬──────┘
+       │                                              │
+       │ 1. POST /token ─────────────────────────────▶│
+       │    grant_type=client_credentials             │
+       │    client_id=service_id                      │
+       │    client_secret=service_secret              │
+       │    scope=tools:execute                       │
+       │    resource=https://mcp-server...            │
+       │                                              │
+       │◀────────────── 2. Token Response ───────────│
+       │    {access_token, token_type, expires_in}    │
+       │    (NO refresh_token)                        │
+       │                                              │
+       │ 3. API Request with Bearer token ───────────▶│ MCP Server
+       │                                              │
+</code></pre></div></div>
+
+<h4 id="extension-capability">Extension Capability</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+  <span class="nl">experimental</span><span class="p">:</span> <span class="p">{</span>
+    <span class="dl">"</span><span class="s2">oauth-m2m</span><span class="dl">"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="na">supported_grant_types</span><span class="p">:</span> <span class="p">[</span><span class="dl">"</span><span class="s2">client_credentials</span><span class="dl">"</span><span class="p">],</span>
+      <span class="na">token_endpoint</span><span class="p">:</span> <span class="dl">"</span><span class="s2">https://auth0.example.com/oauth/token</span><span class="dl">"</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h4 id="security-considerations">Security Considerations</h4>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">client_secret</code> MUST be stored securely</li>
+  <li>Use environment variables or secret managers</li>
+  <li>Never commit secrets to version control</li>
+  <li>Rotate secrets periodically</li>
+  <li>Limit scope to minimum required permissions</li>
+</ul>
+
+<hr />
+
+<h2 id="p4-observability">P4: Observability</h2>
+
+<h3 id="opentelemetry-integration">OpenTelemetry Integration</h3>
+
+<h4 id="setup">Setup</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">NodeSDK</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">@opentelemetry/sdk-node</span><span class="dl">'</span><span class="p">;</span>
+<span class="k">import</span> <span class="p">{</span> <span class="nx">OTLPTraceExporter</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">@opentelemetry/exporter-trace-otlp-http</span><span class="dl">'</span><span class="p">;</span>
+<span class="k">import</span> <span class="p">{</span> <span class="nx">OTLPMetricExporter</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">@opentelemetry/exporter-metrics-otlp-http</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">sdk</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">NodeSDK</span><span class="p">({</span>
+  <span class="na">serviceName</span><span class="p">:</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">traceExporter</span><span class="p">:</span> <span class="k">new</span> <span class="nx">OTLPTraceExporter</span><span class="p">(),</span>
+  <span class="na">metricReader</span><span class="p">:</span> <span class="k">new</span> <span class="nx">PeriodicExportingMetricReader</span><span class="p">({</span>
+    <span class="na">exporter</span><span class="p">:</span> <span class="k">new</span> <span class="nx">OTLPMetricExporter</span><span class="p">(),</span>
+  <span class="p">}),</span>
+<span class="p">});</span>
+
+<span class="nx">sdk</span><span class="p">.</span><span class="nx">start</span><span class="p">();</span>
+</code></pre></div></div>
+
+<h3 id="structured-logging">Structured Logging</h3>
+
+<h4 id="format-json">Format (JSON)</h4>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2025-01-14T10:30:00.000Z"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"level"</span><span class="p">:</span><span class="w"> </span><span class="s2">"info"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"traceId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"abc123..."</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"spanId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"def456..."</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Tool executed"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"tool"</span><span class="p">:</span><span class="w"> </span><span class="s2">"calculate"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"duration_ms"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h3 id="metrics">Metrics</h3>
+
+<h4 id="key-metrics">Key Metrics</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>Metric</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">mcp.requests.total</code></td>
+      <td>Counter</td>
+      <td>Request count by method</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">mcp.requests.duration</code></td>
+      <td>Histogram</td>
+      <td>Request latency (p50, p95, p99)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">mcp.errors.total</code></td>
+      <td>Counter</td>
+      <td>Error count by code</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">mcp.sessions.active</code></td>
+      <td>Gauge</td>
+      <td>Active sessions</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">mcp.tools.executions</code></td>
+      <td>Counter</td>
+      <td>Tool execution count by name</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">mcp.auth.attempts</code></td>
+      <td>Counter</td>
+      <td>Auth attempts (success/failure)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="tracing">Tracing</h3>
+
+<h4 id="trace-context">Trace Context</h4>
+<ul>
+  <li>Assign trace ID to each request</li>
+  <li>Propagate via <code class="language-plaintext highlighter-rouge">traceparent</code> header (W3C Trace Context)</li>
+  <li>Log trace ID with all related entries</li>
+  <li>Support distributed tracing standards</li>
+</ul>
+
+<h3 id="health-endpoints">Health Endpoints</h3>
+
+<h4 id="health-liveness"><code class="language-plaintext highlighter-rouge">/health</code> (Liveness)</h4>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"healthy"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2025-01-14T10:30:00.000Z"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h4 id="ready-readiness"><code class="language-plaintext highlighter-rouge">/ready</code> (Readiness)</h4>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ready"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"checks"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"auth_server"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ok"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"tool_registry"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ok"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h3 id="debug-mode">Debug Mode</h3>
+
+<p>Enable via <code class="language-plaintext highlighter-rouge">MCP_DEBUG=true</code>:</p>
+<ul>
+  <li>Verbose logging (debug level)</li>
+  <li>Request/response dumping</li>
+  <li>Performance timing output</li>
+</ul>
+
+<hr />
+
+<h2 id="configuration-reference">Configuration Reference</h2>
+
+<h3 id="environment-variables">Environment Variables</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Default</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_PORT</code></td>
+      <td>3000</td>
+      <td>HTTP transport port</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_HOST</code></td>
+      <td>0.0.0.0</td>
+      <td>HTTP bind address</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_TRANSPORT</code></td>
+      <td>both</td>
+      <td>Transport mode: stdio, http, both</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_STATELESS_MODE</code></td>
+      <td>false</td>
+      <td>Enable stateless HTTP mode</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_PAGE_SIZE</code></td>
+      <td>50</td>
+      <td>Default pagination size</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_REQUEST_TIMEOUT_MS</code></td>
+      <td>60000</td>
+      <td>Request timeout</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_SHUTDOWN_TIMEOUT_MS</code></td>
+      <td>30000</td>
+      <td>Graceful shutdown timeout</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_PROGRESS_INTERVAL_MS</code></td>
+      <td>100</td>
+      <td>Progress notification throttle</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_DEBUG</code></td>
+      <td>false</td>
+      <td>Enable debug mode</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_LOG_LEVEL</code></td>
+      <td>info</td>
+      <td>Minimum log level</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_AUTH0_DOMAIN</code></td>
+      <td>-</td>
+      <td>Auth0 tenant domain</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_AUTH0_AUDIENCE</code></td>
+      <td>-</td>
+      <td>Auth0 API audience</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_AUTH0_CLIENT_ID</code></td>
+      <td>-</td>
+      <td>Auth0 client ID</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_M2M_CLIENT_SECRET</code></td>
+      <td>-</td>
+      <td>M2M client secret</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">OTEL_EXPORTER_OTLP_ENDPOINT</code></td>
+      <td>-</td>
+      <td>OpenTelemetry endpoint</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h2 id="graceful-shutdown">Graceful Shutdown</h2>
+
+<h3 id="shutdown-sequence">Shutdown Sequence</h3>
+
+<ol>
+  <li>Receive SIGTERM/SIGINT</li>
+  <li>Stop accepting new connections</li>
+  <li>Set readiness to not ready (<code class="language-plaintext highlighter-rouge">/ready</code> returns 503)</li>
+  <li>Wait for in-flight requests (up to <code class="language-plaintext highlighter-rouge">MCP_SHUTDOWN_TIMEOUT_MS</code>)</li>
+  <li>Close SSE streams gracefully</li>
+  <li>Clean up resources</li>
+  <li>Exit with code 0</li>
+</ol>
+
+<h3 id="implementation-1">Implementation</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">process</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="dl">'</span><span class="s1">SIGTERM</span><span class="dl">'</span><span class="p">,</span> <span class="k">async</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="nx">logger</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="dl">'</span><span class="s1">Shutdown initiated</span><span class="dl">'</span><span class="p">);</span>
+
+  <span class="nx">server</span><span class="p">.</span><span class="nx">stop</span><span class="p">();</span>  <span class="c1">// Stop accepting new requests</span>
+
+  <span class="k">await</span> <span class="nb">Promise</span><span class="p">.</span><span class="nx">race</span><span class="p">([</span>
+    <span class="nx">waitForInflightRequests</span><span class="p">(),</span>
+    <span class="nx">timeout</span><span class="p">(</span><span class="nx">config</span><span class="p">.</span><span class="nx">shutdownTimeoutMs</span><span class="p">)</span>
+  <span class="p">]);</span>
+
+  <span class="k">await</span> <span class="nx">cleanup</span><span class="p">();</span>
+  <span class="nx">process</span><span class="p">.</span><span class="nx">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+<span class="p">});</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="testing-strategy">Testing Strategy</h2>
+
+<h3 id="unit-tests">Unit Tests</h3>
+<ul>
+  <li>Protocol message parsing/serialization</li>
+  <li>PKCE generation and validation</li>
+  <li>Tool input validation</li>
+  <li>Error code mapping</li>
+  <li>Capability negotiation logic</li>
+</ul>
+
+<h3 id="integration-tests">Integration Tests</h3>
+<ul>
+  <li>Full stdio transport flow</li>
+  <li>HTTP transport with session management</li>
+  <li>SSE stream with reconnection</li>
+  <li>OAuth authorization flow</li>
+  <li>Tool execution end-to-end</li>
+</ul>
+
+<h3 id="mcp-inspector-compatibility">MCP Inspector Compatibility</h3>
+<ul>
+  <li>Validate against official MCP Inspector</li>
+  <li>Test all protocol methods</li>
+  <li>Verify capability advertisement</li>
+  <li>Confirm error handling</li>
+</ul>
+
+<hr />
+
+<h2 id="implementation-checklist">Implementation Checklist</h2>
+
+<h3 id="p0-core-protocol">P0: Core Protocol</h3>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />JSON-RPC 2.0 message parsing and serialization</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Request/response correlation by ID</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Notification handling (no response)</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />initialize/initialized handshake</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Protocol version validation</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Server capability advertisement</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Client capability recognition</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Tool definition schema</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />tools/list implementation</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />tools/call implementation</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Input validation against JSON Schema</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Standard error codes</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Error response formatting</li>
+</ul>
+
+<h3 id="p1-transport--utilities">P1: Transport &amp; Utilities</h3>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />stdio message framing</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />stdio stream handling</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />stderr logging</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Streamable HTTP endpoint</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />POST request handling</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />GET SSE stream</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Session ID management</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />MCP-Protocol-Version header</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Origin validation</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Pagination cursor support</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Progress token handling</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Progress notification emission</li>
+</ul>
+
+<h3 id="p2-oauth-21-authorization-1">P2: OAuth 2.1 Authorization</h3>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Protected Resource Metadata endpoint</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />WWW-Authenticate header on 401</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Authorization server discovery</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Client registration support (CIMD)</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />PKCE code verifier generation</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />PKCE S256 challenge computation</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Authorization request construction</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />State parameter generation and validation</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Token exchange implementation</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Resource indicator support (RFC 8707)</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Access token validation</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Token refresh handling</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Scope validation and enforcement</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Incremental consent support</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Secure token storage</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />completion/complete method</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />logging/setLevel method</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />notifications/message emission</li>
+</ul>
+
+<h3 id="p3-extensions-framework-1">P3: Extensions Framework</h3>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Extension capability negotiation</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Extension settings handling</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />M2M OAuth extension</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Client credentials flow</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />M2M token management</li>
+</ul>
+
+<h3 id="p4-observability-1">P4: Observability</h3>
+<ul class="task-list">
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Structured logging</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Metrics collection</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Request tracing</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Health check endpoints</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="disabled" />Debug mode</li>
+</ul>
+
+<hr />
+
+<h2 id="decision-log">Decision Log</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Decision</th>
+      <th>Rationale</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>TypeScript + Node.js 20</td>
+      <td>Official SDK available, strong async support, LTS stability</td>
+    </tr>
+    <tr>
+      <td>Official MCP SDK</td>
+      <td>Proven patterns, faster development, community support</td>
+    </tr>
+    <tr>
+      <td>Environment variables only</td>
+      <td>12-factor app principles, container-friendly</td>
+    </tr>
+    <tr>
+      <td>Full OAuth 2.1 + PKCE</td>
+      <td>Complete reference implementation per spec</td>
+    </tr>
+    <tr>
+      <td>Auth0 examples</td>
+      <td>Concrete, widely-used provider for documentation</td>
+    </tr>
+    <tr>
+      <td>Full M2M OAuth extension</td>
+      <td>Demonstrates complete extension framework</td>
+    </tr>
+    <tr>
+      <td>OpenTelemetry</td>
+      <td>Industry standard, vendor-neutral observability</td>
+    </tr>
+    <tr>
+      <td>Both transports (stdio + HTTP)</td>
+      <td>Full flexibility for all deployment scenarios</td>
+    </tr>
+    <tr>
+      <td>Stateful + stateless HTTP</td>
+      <td>Demonstrates both patterns per spec</td>
+    </tr>
+    <tr>
+      <td>SSE replay support</td>
+      <td>Full SEP-1699 compliance</td>
+    </tr>
+    <tr>
+      <td>50 item page size</td>
+      <td>Balance of performance and usability</td>
+    </tr>
+    <tr>
+      <td>Strict error separation</td>
+      <td>SEP-1303 compliance for LLM self-correction</td>
+    </tr>
+    <tr>
+      <td>Progress rate limiting (100ms)</td>
+      <td>Prevent client flooding</td>
+    </tr>
+    <tr>
+      <td>Configurable shutdown timeout</td>
+      <td>Production-grade graceful termination</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h2 id="open-questions">Open Questions</h2>
+
+<p>None - all requirements clarified during interview.</p>
+
+<hr />
+
+<h2 id="future-enhancements-phase-2">Future Enhancements (Phase 2)</h2>
+
+<p>The following are explicitly out of scope for Phase 1:</p>
+<ul>
+  <li>Resources and Resource Templates</li>
+  <li>Prompts</li>
+  <li>Sampling (LLM requests)</li>
+  <li>Cancellation</li>
+  <li>Tasks primitive</li>
+  <li>Elicitation (user input)</li>
+  <li>MCP Bundles</li>
+  <li>Icons for primitives</li>
+</ul>
+
+
+<hr>
+
+<div class="nav-footer">
+  <p><strong>Navigation:</strong>
+    <a href="/">Home</a> |
+    <a href="/getting-started/installation">Getting Started</a> |
+    <a href="/guides/protocol">Guides</a> |
+    <a href="/api/protocol">API Reference</a> |
+    <a href="/examples/stdio-server">Examples</a> |
+    <a href="/reference/environment">Reference</a>
+  </p>
+</div>
+
+
+
+      </section>
+      <footer>
+        
+        <p>This project is maintained by <a href="https://github.com/chiefbuilder">chiefbuilder</a></p>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="/assets/js/scale.fix.js"></script>
+  </body>
+</html>

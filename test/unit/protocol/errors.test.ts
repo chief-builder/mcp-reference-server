@@ -464,33 +464,33 @@ describe('MCP Errors', () => {
     });
 
     describe('specific error type guards', () => {
-      it('isParseError', () => {
+      it('should identify ParseError correctly', () => {
         expect(isParseError(new ParseError())).toBe(true);
         expect(isParseError(new InvalidRequestError())).toBe(false);
         expect(isParseError(new Error())).toBe(false);
       });
 
-      it('isInvalidRequestError', () => {
+      it('should identify InvalidRequestError correctly', () => {
         expect(isInvalidRequestError(new InvalidRequestError())).toBe(true);
         expect(isInvalidRequestError(new ParseError())).toBe(false);
       });
 
-      it('isMethodNotFoundError', () => {
+      it('should identify MethodNotFoundError correctly', () => {
         expect(isMethodNotFoundError(new MethodNotFoundError('test'))).toBe(true);
         expect(isMethodNotFoundError(new ParseError())).toBe(false);
       });
 
-      it('isInvalidParamsError', () => {
+      it('should identify InvalidParamsError correctly', () => {
         expect(isInvalidParamsError(new InvalidParamsError())).toBe(true);
         expect(isInvalidParamsError(new ParseError())).toBe(false);
       });
 
-      it('isInternalError', () => {
+      it('should identify InternalError correctly', () => {
         expect(isInternalError(new InternalError())).toBe(true);
         expect(isInternalError(new ParseError())).toBe(false);
       });
 
-      it('isToolExecutionError', () => {
+      it('should identify ToolExecutionError correctly', () => {
         expect(isToolExecutionError(new ToolExecutionError('test', 'msg'))).toBe(
           true
         );
@@ -500,7 +500,7 @@ describe('MCP Errors', () => {
     });
 
     describe('error code helpers', () => {
-      it('isServerErrorCode should identify server error range', () => {
+      it('should identify server error range correctly', () => {
         expect(isServerErrorCode(-32000)).toBe(true);
         expect(isServerErrorCode(-32050)).toBe(true);
         expect(isServerErrorCode(-32099)).toBe(true);
@@ -509,7 +509,7 @@ describe('MCP Errors', () => {
         expect(isServerErrorCode(-32700)).toBe(false);
       });
 
-      it('isStandardErrorCode should identify standard codes', () => {
+      it('should identify standard error codes correctly', () => {
         expect(isStandardErrorCode(PARSE_ERROR)).toBe(true);
         expect(isStandardErrorCode(INVALID_REQUEST)).toBe(true);
         expect(isStandardErrorCode(METHOD_NOT_FOUND)).toBe(true);

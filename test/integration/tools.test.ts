@@ -16,15 +16,11 @@ import { registerDiceRollerTool } from '../../src/tools/dice-roller.js';
 import { registerFortuneTellerTool } from '../../src/tools/fortune-teller.js';
 import { createRequest, createSuccessResponse, JsonRpcRequest } from '../../src/protocol/jsonrpc.js';
 import { PROTOCOL_VERSION } from '../../src/protocol/lifecycle.js';
+import { getTestPort } from '../helpers/ports.js';
 
 // =============================================================================
 // Test Helpers
 // =============================================================================
-
-let portCounter = 4300;
-function getTestPort(): number {
-  return portCounter++;
-}
 
 interface TestServer {
   transport: HttpTransport;

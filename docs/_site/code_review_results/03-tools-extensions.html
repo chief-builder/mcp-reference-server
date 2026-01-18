@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Code Review: Tools, Extensions &amp; Handlers Domain | MCP Reference Server</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Code Review: Tools, Extensions &amp; Handlers Domain" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<meta property="og:description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<link rel="canonical" href="http://localhost:4000/code_review_results/03-tools-extensions.html" />
+<meta property="og:url" content="http://localhost:4000/code_review_results/03-tools-extensions.html" />
+<meta property="og:site_name" content="MCP Reference Server" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Code Review: Tools, Extensions &amp; Handlers Domain" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification","headline":"Code Review: Tools, Extensions &amp; Handlers Domain","url":"http://localhost:4000/code_review_results/03-tools-extensions.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=4084654cb939e8940665a91c4c56b28d8f437143">
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="http://localhost:4000/">MCP Reference Server</a></h1>
+
+        
+
+        <p>A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification</p>
+
+        
+        <p class="view"><a href="https://github.com/chiefbuilder/mcp-reference-server">View the Project on GitHub <small>chiefbuilder/mcp-reference-server</small></a></p>
+        
+
+        
+
+        
+      </header>
+      <section>
+
+      <h1 id="code-review-tools-extensions--handlers-domain">Code Review: Tools, Extensions &amp; Handlers Domain</h1>
+
+<p><strong>Review Date:</strong> 2026-01-18
+<strong>Files Reviewed:</strong> 9
+<strong>Total Lines:</strong> ~3,660</p>
+
+<hr />
+
+<h2 id="files-reviewed">Files Reviewed</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>File</th>
+      <th>Lines</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">src/tools/executor.ts</code></td>
+      <td>617</td>
+      <td>Tool execution engine with validation</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">src/tools/registry.ts</code></td>
+      <td>610</td>
+      <td>Tool registration system</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">src/tools/fortune-teller.ts</code></td>
+      <td>317</td>
+      <td>Sample tool implementation</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">src/tools/dice-roller.ts</code></td>
+      <td>237</td>
+      <td>Sample tool implementation</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">src/tools/calculator.ts</code></td>
+      <td>145</td>
+      <td>Sample tool implementation</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">src/tools/builtin.ts</code></td>
+      <td>57</td>
+      <td>Built-in tools factory</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">src/extensions/framework.ts</code></td>
+      <td>484</td>
+      <td>Extension negotiation framework</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">src/completions/handler.ts</code></td>
+      <td>298</td>
+      <td>Argument auto-complete handler</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">src/logging/handler.ts</code></td>
+      <td>307</td>
+      <td>RFC 5424 logging handler</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h2 id="executive-summary">Executive Summary</h2>
+
+<p>This is a well-structured tool ecosystem with clean separation of concerns. The code demonstrates solid TypeScript practices, proper SEP-1303 error handling, and security-conscious randomness. However, there are concerns around ReDoS vulnerabilities, memory leaks, and thread safety in the registry.</p>
+
+<hr />
+
+<h2 id="issues-by-file">Issues by File</h2>
+
+<h3 id="1-srctoolsexecutorts">1. <code class="language-plaintext highlighter-rouge">src/tools/executor.ts</code></h3>
+
+<h4 id="medium---redos-vulnerability-in-pattern-validation-lines-312-317">MEDIUM - ReDoS Vulnerability in Pattern Validation (Lines 312-317)</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="p">(</span><span class="nx">schema</span><span class="p">.</span><span class="nx">pattern</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">const</span> <span class="nx">regex</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">RegExp</span><span class="p">(</span><span class="nx">schema</span><span class="p">.</span><span class="nx">pattern</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">regex</span><span class="p">.</span><span class="nx">test</span><span class="p">(</span><span class="nx">value</span><span class="p">))</span> <span class="p">{</span>
+    <span class="nx">errors</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="s2">`</span><span class="p">${</span><span class="nx">path</span> <span class="o">||</span> <span class="dl">'</span><span class="s1">/</span><span class="dl">'</span><span class="p">}</span><span class="s2">: string does not match pattern </span><span class="p">${</span><span class="nx">schema</span><span class="p">.</span><span class="nx">pattern</span><span class="p">}</span><span class="s2">`</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><strong>Issue:</strong> User-provided patterns in JSON schemas are compiled directly into RegExp. Malicious patterns can cause catastrophic backtracking (ReDoS).</p>
+
+<p><strong>Recommendation:</strong> Add regex complexity limits, timeout, or use safe regex library like <code class="language-plaintext highlighter-rouge">safe-regex</code> or <code class="language-plaintext highlighter-rouge">re2</code>.</p>
+
+<h4 id="medium---event-listener-memory-leak-lines-476-492">MEDIUM - Event Listener Memory Leak (Lines 476-492)</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">result</span> <span class="o">=</span> <span class="k">await</span> <span class="nb">Promise</span><span class="p">.</span><span class="nx">race</span><span class="p">([</span>
+  <span class="nx">tool</span><span class="p">.</span><span class="nx">handler</span><span class="p">(</span><span class="nx">args</span><span class="p">),</span>
+  <span class="k">new</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">ToolResult</span><span class="o">&gt;</span><span class="p">((</span><span class="nx">_</span><span class="p">,</span> <span class="nx">reject</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="nx">timeoutController</span><span class="p">.</span><span class="nx">signal</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="dl">'</span><span class="s1">abort</span><span class="dl">'</span><span class="p">,</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+      <span class="nx">reject</span><span class="p">(</span><span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="dl">'</span><span class="s1">Tool execution timeout</span><span class="dl">'</span><span class="p">));</span>
+    <span class="p">});</span>
+  <span class="p">}),</span>
+  <span class="c1">// ... abortSignal listener</span>
+<span class="p">]);</span>
+</code></pre></div></div>
+
+<p><strong>Issue:</strong> Event listeners added to <code class="language-plaintext highlighter-rouge">AbortSignal</code> are never removed. Long-running servers accumulate listeners.</p>
+
+<p><strong>Recommendation:</strong> Use <code class="language-plaintext highlighter-rouge">{ once: true }</code> option:</p>
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">signal</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="dl">'</span><span class="s1">abort</span><span class="dl">'</span><span class="p">,</span> <span class="nx">handler</span><span class="p">,</span> <span class="p">{</span> <span class="na">once</span><span class="p">:</span> <span class="kc">true</span> <span class="p">});</span>
+</code></pre></div></div>
+
+<h4 id="low---incomplete-json-schema-validation">LOW - Incomplete JSON Schema Validation</h4>
+
+<p>Missing support for <code class="language-plaintext highlighter-rouge">oneOf</code>, <code class="language-plaintext highlighter-rouge">anyOf</code>, <code class="language-plaintext highlighter-rouge">allOf</code>, <code class="language-plaintext highlighter-rouge">not</code>, <code class="language-plaintext highlighter-rouge">if/then/else</code>, <code class="language-plaintext highlighter-rouge">$ref</code>, <code class="language-plaintext highlighter-rouge">format</code>, and recursive schemas.</p>
+
+<p><strong>Recommendation:</strong> For production, integrate <code class="language-plaintext highlighter-rouge">ajv</code> library.</p>
+
+<h4 id="low---no-input-size-limits">LOW - No Input Size Limits</h4>
+
+<p>No checks on size of <code class="language-plaintext highlighter-rouge">args</code> passed to tools. Large inputs could cause memory issues.</p>
+
+<hr />
+
+<h3 id="2-srctoolsregistryts">2. <code class="language-plaintext highlighter-rouge">src/tools/registry.ts</code></h3>
+
+<h4 id="medium---no-thread-safety--race-conditions-lines-282-288">MEDIUM - No Thread Safety / Race Conditions (Lines 282-288)</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">registerTool</span><span class="p">(</span><span class="nx">tool</span><span class="p">:</span> <span class="nx">Tool</span><span class="p">):</span> <span class="k">void</span> <span class="p">{</span>
+  <span class="c1">// ...validation...</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">tools</span><span class="p">.</span><span class="kd">set</span><span class="p">(</span><span class="nx">tool</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span> <span class="nx">tool</span><span class="p">);</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">toolOrder</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">tool</span><span class="p">.</span><span class="nx">name</span><span class="p">);</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">emit</span><span class="p">(</span><span class="dl">'</span><span class="s1">toolsChanged</span><span class="dl">'</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><strong>Issue:</strong> Registration operations not atomic. Concurrent registrations could lead to inconsistent state between <code class="language-plaintext highlighter-rouge">tools</code> Map and <code class="language-plaintext highlighter-rouge">toolOrder</code> array.</p>
+
+<p><strong>Recommendation:</strong> Add mutex/lock or document that registration must happen during initialization only.</p>
+
+<h4 id="medium---unbounded-eventemitter-listeners">MEDIUM - Unbounded EventEmitter Listeners</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">export</span> <span class="kd">class</span> <span class="nx">ToolRegistry</span> <span class="kd">extends</span> <span class="nx">EventEmitter</span> <span class="p">{</span>
+</code></pre></div></div>
+
+<p><strong>Issue:</strong> EventEmitter has default limit of 10 listeners and no cleanup mechanism.</p>
+
+<p><strong>Recommendation:</strong> Set max listeners appropriately and provide <code class="language-plaintext highlighter-rouge">dispose()</code> method.</p>
+
+<h4 id="low---index-signature-bypasses-type-checking-line-51">LOW - Index Signature Bypasses Type Checking (Line 51)</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">export</span> <span class="kr">interface</span> <span class="nx">JsonSchema</span> <span class="p">{</span>
+  <span class="c1">// ...typed properties...</span>
+  <span class="p">[</span><span class="nx">key</span><span class="p">:</span> <span class="kr">string</span><span class="p">]:</span> <span class="nx">unknown</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>While necessary for JSON Schema extensibility, bypasses TypeScript checking for custom properties.</p>
+
+<h4 id="low---zod-internal-access-lines-441-532">LOW - Zod Internal Access (Lines 441-532)</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">def</span> <span class="o">=</span> <span class="nx">zodSchema</span><span class="p">.</span><span class="nx">_def</span> <span class="k">as</span> <span class="nx">ZodDefWithTypeName</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p><strong>Issue:</strong> Accessing Zod’s internal <code class="language-plaintext highlighter-rouge">_def</code> property is fragile and may break with version updates.</p>
+
+<p><strong>Recommendation:</strong> Use <code class="language-plaintext highlighter-rouge">zod-to-json-schema</code> library instead.</p>
+
+<hr />
+
+<h3 id="3-srctoolsfortune-tellerts">3. <code class="language-plaintext highlighter-rouge">src/tools/fortune-teller.ts</code></h3>
+
+<h4 id="low---non-null-assertion-line-206">LOW - Non-null Assertion (Line 206)</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">return</span> <span class="nx">fortunes</span><span class="p">[</span><span class="nx">index</span><span class="p">]</span><span class="o">!</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p><strong>Issue:</strong> While safe due to prior bounds calculation, could be cleaner.</p>
+
+<p><strong>Recommendation:</strong> Add bounds check or use optional chaining with fallback.</p>
+
+<h4 id="positive-observations">Positive Observations</h4>
+
+<ul>
+  <li>Uses <code class="language-plaintext highlighter-rouge">crypto.randomInt()</code> for cryptographically secure randomness</li>
+  <li>Properly marks <code class="language-plaintext highlighter-rouge">idempotentHint: false</code> for random operations</li>
+  <li>Clean separation of Zod schema (internal) and JSON Schema (external)</li>
+  <li>Comprehensive auto-complete support</li>
+</ul>
+
+<hr />
+
+<h3 id="4-srctoolsdice-rollerts">4. <code class="language-plaintext highlighter-rouge">src/tools/dice-roller.ts</code></h3>
+
+<h4 id="low---magic-number-for-max_dice">LOW - Magic Number for MAX_DICE</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">MAX_DICE</span> <span class="o">=</span> <span class="mi">100</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p><strong>Issue:</strong> Limit is reasonable but arbitrary.</p>
+
+<p><strong>Recommendation:</strong> Make configurable or document rationale.</p>
+
+<h4 id="positive-observations-1">Positive Observations</h4>
+
+<ul>
+  <li>Input sanitization via normalization (lowercase, trim)</li>
+  <li>Clear regex with documented format</li>
+  <li>Cryptographically secure random generation</li>
+  <li>Proper SEP-1303 error handling</li>
+</ul>
+
+<hr />
+
+<h3 id="5-srctoolscalculatorts">5. <code class="language-plaintext highlighter-rouge">src/tools/calculator.ts</code></h3>
+
+<h4 id="low---no-overflowunderflow-protection-lines-71-92">LOW - No Overflow/Underflow Protection (Lines 71-92)</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">case</span> <span class="dl">'</span><span class="s1">multiply</span><span class="dl">'</span><span class="p">:</span>
+  <span class="nx">result</span> <span class="o">=</span> <span class="nx">a</span> <span class="o">*</span> <span class="nx">b</span><span class="p">;</span>
+  <span class="c1">// No check for Infinity or overflow</span>
+</code></pre></div></div>
+
+<p><strong>Issue:</strong> JavaScript arithmetic can produce <code class="language-plaintext highlighter-rouge">Infinity</code>, <code class="language-plaintext highlighter-rouge">-Infinity</code>, or <code class="language-plaintext highlighter-rouge">NaN</code>.</p>
+
+<p><strong>Recommendation:</strong> Add <code class="language-plaintext highlighter-rouge">Number.isFinite(result)</code> check and return appropriate errors.</p>
+
+<h4 id="positive-observations-2">Positive Observations</h4>
+
+<ul>
+  <li>Clean switch statement with exhaustive handling</li>
+  <li>Proper idempotent annotation</li>
+  <li>Division by zero explicitly handled</li>
+</ul>
+
+<hr />
+
+<h3 id="6-srctoolsbuiltints">6. <code class="language-plaintext highlighter-rouge">src/tools/builtin.ts</code></h3>
+
+<p><strong>Assessment:</strong> Clean implementation with good separation between tool and completion registration. No significant issues found.</p>
+
+<hr />
+
+<h3 id="7-srcextensionsframeworkts">7. <code class="language-plaintext highlighter-rouge">src/extensions/framework.ts</code></h3>
+
+<h4 id="medium---unhandled-extension-initialization-errors-lines-322-330">MEDIUM - Unhandled Extension Initialization Errors (Lines 322-330)</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="p">(</span><span class="nx">extension</span><span class="p">.</span><span class="nx">onInitialize</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">try</span> <span class="p">{</span>
+    <span class="k">await</span> <span class="nx">extension</span><span class="p">.</span><span class="nx">onInitialize</span><span class="p">(</span><span class="nx">clientSettings</span><span class="p">);</span>
+  <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s2">`Error initializing extension '</span><span class="p">${</span><span class="nx">key</span><span class="p">}</span><span class="s2">':`</span><span class="p">,</span> <span class="nx">err</span><span class="p">);</span>
+    <span class="k">continue</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><strong>Issue:</strong> Errors logged to console and silently skipped. Client receives no indication extension failed.</p>
+
+<p><strong>Recommendation:</strong> Return initialization status in negotiation result or throw descriptive error.</p>
+
+<h4 id="medium---console-logging-in-production-code-lines-262-327">MEDIUM - Console Logging in Production Code (Lines 262, 327)</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s2">`Error shutting down extension '</span><span class="p">${</span><span class="nx">name</span><span class="p">}</span><span class="s2">':`</span><span class="p">,</span> <span class="nx">err</span><span class="p">);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s2">`Error initializing extension '</span><span class="p">${</span><span class="nx">key</span><span class="p">}</span><span class="s2">':`</span><span class="p">,</span> <span class="nx">err</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p><strong>Issue:</strong> Direct console usage bypasses LoggingHandler and may expose sensitive error details.</p>
+
+<p><strong>Recommendation:</strong> Inject logger and use structured logging.</p>
+
+<h4 id="low---placeholder-extension-lines-387-402">LOW - Placeholder Extension (Lines 387-402)</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">function</span> <span class="nx">createOAuthM2MPlaceholderExtension</span><span class="p">(...):</span> <span class="nx">Extension</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="p">{</span>
+    <span class="na">name</span><span class="p">:</span> <span class="dl">'</span><span class="s1">anthropic/oauth-m2m</span><span class="dl">'</span><span class="p">,</span>
+    <span class="k">async</span> <span class="nx">onInitialize</span><span class="p">(</span><span class="na">_clientSettings</span><span class="p">:</span> <span class="nx">unknown</span><span class="p">):</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span> <span class="p">{</span>
+      <span class="c1">// Placeholder - implementation in c6t.24</span>
+    <span class="p">},</span>
+</code></pre></div></div>
+
+<p><strong>Issue:</strong> Placeholder code in production can confuse consumers.</p>
+
+<p><strong>Recommendation:</strong> Add warning log when placeholder enabled, or remove.</p>
+
+<h4 id="low---legacy-api-maintenance-lines-434-484">LOW - Legacy API Maintenance (Lines 434-484)</h4>
+
+<p><code class="language-plaintext highlighter-rouge">ExtensionFramework</code> class marked deprecated but requires ongoing maintenance.</p>
+
+<p><strong>Recommendation:</strong> Plan deprecation timeline.</p>
+
+<hr />
+
+<h3 id="8-srccompletionshandlerts">8. <code class="language-plaintext highlighter-rouge">src/completions/handler.ts</code></h3>
+
+<h4 id="low---silent-failure-on-invalid-params-lines-228-230">LOW - Silent Failure on Invalid Params (Lines 228-230)</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">parseResult</span> <span class="o">=</span> <span class="nx">CompletionParamsSchema</span><span class="p">.</span><span class="nx">safeParse</span><span class="p">(</span><span class="nx">params</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">parseResult</span><span class="p">.</span><span class="nx">success</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="p">{</span> <span class="na">completion</span><span class="p">:</span> <span class="p">{</span> <span class="na">values</span><span class="p">:</span> <span class="p">[]</span> <span class="p">}</span> <span class="p">};</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><strong>Issue:</strong> Invalid parameters return empty results instead of error. Makes debugging difficult.</p>
+
+<p><strong>Recommendation:</strong> Consider returning validation errors or logging them.</p>
+
+<h4 id="low---no-provider-cleanup-mechanism">LOW - No Provider Cleanup Mechanism</h4>
+
+<p>Registered providers cannot be unregistered.</p>
+
+<p><strong>Recommendation:</strong> Add <code class="language-plaintext highlighter-rouge">unregisterArgumentProvider()</code> and <code class="language-plaintext highlighter-rouge">unregisterProvider()</code> methods.</p>
+
+<h4 id="positive-observations-3">Positive Observations</h4>
+
+<ul>
+  <li>Case-insensitive prefix filtering</li>
+  <li>Proper result limiting with <code class="language-plaintext highlighter-rouge">hasMore</code> indicator</li>
+  <li>Clean separation of simple and full APIs</li>
+</ul>
+
+<hr />
+
+<h3 id="9-srclogginghandlerts">9. <code class="language-plaintext highlighter-rouge">src/logging/handler.ts</code></h3>
+
+<h4 id="low---silently-ignores-invalid-level-lines-151-156">LOW - Silently Ignores Invalid Level (Lines 151-156)</h4>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">setLevel</span><span class="p">(</span><span class="nx">level</span><span class="p">:</span> <span class="nx">LogLevel</span><span class="p">):</span> <span class="k">void</span> <span class="p">{</span>
+  <span class="kd">const</span> <span class="nx">parseResult</span> <span class="o">=</span> <span class="nx">LogLevelSchema</span><span class="p">.</span><span class="nx">safeParse</span><span class="p">(</span><span class="nx">level</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nx">parseResult</span><span class="p">.</span><span class="nx">success</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">currentLevel</span> <span class="o">=</span> <span class="nx">parseResult</span><span class="p">.</span><span class="nx">data</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="c1">// Invalid level silently ignored</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><strong>Recommendation:</strong> Return boolean indicating success, or throw error.</p>
+
+<h4 id="low---no-log-bufferingbatching">LOW - No Log Buffering/Batching</h4>
+
+<p>Each message immediately triggers notification. High-volume logging could flood transport.</p>
+
+<p><strong>Recommendation:</strong> Consider optional batching with configurable flush intervals.</p>
+
+<h4 id="positive-observations-4">Positive Observations</h4>
+
+<ul>
+  <li>Proper RFC 5424 level priorities</li>
+  <li>Clean convenience methods for each level</li>
+  <li>Optional notification sender allows testing</li>
+</ul>
+
+<hr />
+
+<h2 id="summary">Summary</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Severity</th>
+      <th>Count</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Critical</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>High</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Medium</td>
+      <td>6</td>
+    </tr>
+    <tr>
+      <td>Low</td>
+      <td>12</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h2 id="cross-cutting-concerns">Cross-Cutting Concerns</h2>
+
+<h3 id="security">Security</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Severity</th>
+      <th>Issue</th>
+      <th>File</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>MEDIUM</td>
+      <td>ReDoS vulnerability in regex pattern validation</td>
+      <td>executor.ts</td>
+    </tr>
+    <tr>
+      <td>MEDIUM</td>
+      <td>No thread safety in tool registration</td>
+      <td>registry.ts</td>
+    </tr>
+    <tr>
+      <td>MEDIUM</td>
+      <td>Silent extension initialization failures</td>
+      <td>framework.ts</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="memory-management">Memory Management</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Severity</th>
+      <th>Issue</th>
+      <th>File</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>MEDIUM</td>
+      <td>Event listener leak in abort handling</td>
+      <td>executor.ts</td>
+    </tr>
+    <tr>
+      <td>MEDIUM</td>
+      <td>Unbounded EventEmitter listeners</td>
+      <td>registry.ts</td>
+    </tr>
+    <tr>
+      <td>LOW</td>
+      <td>No provider cleanup</td>
+      <td>handler.ts</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h2 id="recommendations">Recommendations</h2>
+
+<h3 id="high-priority">High Priority</h3>
+
+<ol>
+  <li><strong>Fix memory leak in <code class="language-plaintext highlighter-rouge">executeWithTimeout()</code></strong>
+    <div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">signal</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="dl">'</span><span class="s1">abort</span><span class="dl">'</span><span class="p">,</span> <span class="nx">handler</span><span class="p">,</span> <span class="p">{</span> <span class="na">once</span><span class="p">:</span> <span class="kc">true</span> <span class="p">});</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p><strong>Add ReDoS protection</strong> using <code class="language-plaintext highlighter-rouge">safe-regex</code> or <code class="language-plaintext highlighter-rouge">re2</code> library</p>
+  </li>
+  <li><strong>Replace console.error</strong> with structured logging via LoggingHandler</li>
+</ol>
+
+<h3 id="medium-priority">Medium Priority</h3>
+
+<ol>
+  <li>Add thread safety documentation or mutex for ToolRegistry</li>
+  <li>Return extension initialization failures to client</li>
+  <li>Replace Zod internal access with <code class="language-plaintext highlighter-rouge">zod-to-json-schema</code> library</li>
+  <li>Add input size limits to prevent memory exhaustion</li>
+</ol>
+
+<h3 id="low-priority">Low Priority</h3>
+
+<ol>
+  <li>Add overflow checks to calculator operations</li>
+  <li>Add provider cleanup methods to CompletionHandler</li>
+  <li>Improve error feedback for invalid completion params</li>
+  <li>Plan deprecation timeline for legacy ExtensionFramework API</li>
+</ol>
+
+<hr />
+
+<h2 id="positive-observations-5">Positive Observations</h2>
+
+<ol>
+  <li><strong>Consistent Error Handling:</strong> SEP-1303 compliance well-implemented</li>
+  <li><strong>Type Safety:</strong> Excellent TypeScript with proper type inference</li>
+  <li><strong>Documentation:</strong> Clear JSDoc comments</li>
+  <li><strong>Validation:</strong> Consistent use of Zod</li>
+  <li><strong>Security-Conscious Randomness:</strong> Uses <code class="language-plaintext highlighter-rouge">crypto.randomInt()</code></li>
+  <li><strong>Pagination:</strong> Proper cursor-based with checksum validation</li>
+  <li><strong>Tool Annotations:</strong> Proper use of hints (readOnly, destructive, idempotent, openWorld)</li>
+</ol>
+
+
+<hr>
+
+<div class="nav-footer">
+  <p><strong>Navigation:</strong>
+    <a href="/">Home</a> |
+    <a href="/getting-started/installation">Getting Started</a> |
+    <a href="/guides/protocol">Guides</a> |
+    <a href="/api/protocol">API Reference</a> |
+    <a href="/examples/stdio-server">Examples</a> |
+    <a href="/reference/environment">Reference</a>
+  </p>
+</div>
+
+
+
+      </section>
+      <footer>
+        
+        <p>This project is maintained by <a href="https://github.com/chiefbuilder">chiefbuilder</a></p>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="/assets/js/scale.fix.js"></script>
+  </body>
+</html>

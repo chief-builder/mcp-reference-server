@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Tools Guide | MCP Reference Server</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Tools Guide" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<meta property="og:description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<link rel="canonical" href="http://localhost:4000/guides/tools.html" />
+<meta property="og:url" content="http://localhost:4000/guides/tools.html" />
+<meta property="og:site_name" content="MCP Reference Server" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Tools Guide" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification","headline":"Tools Guide","url":"http://localhost:4000/guides/tools.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=4084654cb939e8940665a91c4c56b28d8f437143">
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="http://localhost:4000/">MCP Reference Server</a></h1>
+
+        
+
+        <p>A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification</p>
+
+        
+        <p class="view"><a href="https://github.com/chiefbuilder/mcp-reference-server">View the Project on GitHub <small>chiefbuilder/mcp-reference-server</small></a></p>
+        
+
+        
+
+        
+      </header>
+      <section>
+
+      <h1 id="tools-guide">Tools Guide</h1>
+
+<p>Tools are the primary way MCP servers expose functionality to clients.</p>
+
+<h2 id="tool-definition">Tool Definition</h2>
+
+<p>A tool consists of:</p>
+
+<ul>
+  <li><strong>name</strong>: Unique identifier (lowercase_with_underscores)</li>
+  <li><strong>description</strong>: Clear explanation for LLMs</li>
+  <li><strong>inputSchema</strong>: JSON Schema for parameters</li>
+  <li><strong>handler</strong>: Async function that executes the tool</li>
+  <li><strong>annotations</strong>: Optional behavior hints (SEP-1303)</li>
+</ul>
+
+<h2 id="tools-in-this-server">Tools in This Server</h2>
+
+<p>This server includes three example tools:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Tool</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">tell_fortune</code></td>
+      <td>Get mystical fortunes by category and mood</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">calculate</code></td>
+      <td>Perform arithmetic operations</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">roll_dice</code></td>
+      <td>Roll dice using standard notation (e.g., “2d6+3”)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="tool-registration-example">Tool Registration Example</h2>
+
+<p>Here’s the actual <code class="language-plaintext highlighter-rouge">tell_fortune</code> tool from this project:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">ToolRegistry</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">registry</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ToolRegistry</span><span class="p">();</span>
+
+<span class="nx">registry</span><span class="p">.</span><span class="nx">registerTool</span><span class="p">({</span>
+  <span class="na">name</span><span class="p">:</span> <span class="dl">'</span><span class="s1">tell_fortune</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">title</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Fortune Teller</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">description</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Get a fortune for categories: love, career, health, wealth, general. Moods: optimistic, mysterious, cautious.</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">inputSchema</span><span class="p">:</span> <span class="p">{</span>
+    <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">object</span><span class="dl">'</span><span class="p">,</span>
+    <span class="na">properties</span><span class="p">:</span> <span class="p">{</span>
+      <span class="na">category</span><span class="p">:</span> <span class="p">{</span>
+        <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">string</span><span class="dl">'</span><span class="p">,</span>
+        <span class="na">enum</span><span class="p">:</span> <span class="p">[</span><span class="dl">'</span><span class="s1">love</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">career</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">health</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">wealth</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">general</span><span class="dl">'</span><span class="p">],</span>
+        <span class="na">description</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Fortune category</span><span class="dl">'</span>
+      <span class="p">},</span>
+      <span class="na">mood</span><span class="p">:</span> <span class="p">{</span>
+        <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">string</span><span class="dl">'</span><span class="p">,</span>
+        <span class="na">enum</span><span class="p">:</span> <span class="p">[</span><span class="dl">'</span><span class="s1">optimistic</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">mysterious</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">cautious</span><span class="dl">'</span><span class="p">],</span>
+        <span class="na">description</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Fortune mood (default: mysterious)</span><span class="dl">'</span>
+      <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="na">required</span><span class="p">:</span> <span class="p">[</span><span class="dl">'</span><span class="s1">category</span><span class="dl">'</span><span class="p">],</span>
+    <span class="na">additionalProperties</span><span class="p">:</span> <span class="kc">false</span>
+  <span class="p">},</span>
+  <span class="na">annotations</span><span class="p">:</span> <span class="p">{</span>
+    <span class="na">readOnlyHint</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="na">destructiveHint</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+    <span class="na">idempotentHint</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>  <span class="c1">// Random fortunes!</span>
+    <span class="na">openWorldHint</span><span class="p">:</span> <span class="kc">false</span>
+  <span class="p">},</span>
+  <span class="na">handler</span><span class="p">:</span> <span class="k">async</span> <span class="p">({</span> <span class="nx">category</span><span class="p">,</span> <span class="nx">mood</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">mysterious</span><span class="dl">'</span> <span class="p">})</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="kd">const</span> <span class="nx">fortune</span> <span class="o">=</span> <span class="nx">selectFortune</span><span class="p">(</span><span class="nx">category</span><span class="p">,</span> <span class="nx">mood</span><span class="p">);</span>
+    <span class="k">return</span> <span class="p">{</span>
+      <span class="na">content</span><span class="p">:</span> <span class="p">[{</span>
+        <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">text</span><span class="dl">'</span><span class="p">,</span>
+        <span class="na">text</span><span class="p">:</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">({</span> <span class="nx">category</span><span class="p">,</span> <span class="nx">mood</span><span class="p">,</span> <span class="nx">fortune</span> <span class="p">})</span>
+      <span class="p">}]</span>
+    <span class="p">};</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+</code></pre></div></div>
+
+<h2 id="tool-annotations-sep-1303">Tool Annotations (SEP-1303)</h2>
+
+<p>Annotations provide behavior hints to clients. Here are the annotations for tools in this server:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// tell_fortune - random results, no side effects</span>
+<span class="nx">annotations</span><span class="p">:</span> <span class="p">{</span>
+  <span class="nl">readOnlyHint</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>      <span class="c1">// No side effects</span>
+  <span class="nx">destructiveHint</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>  <span class="c1">// Doesn't modify data</span>
+  <span class="nx">idempotentHint</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>   <span class="c1">// Random fortunes each call</span>
+  <span class="nx">openWorldHint</span><span class="p">:</span> <span class="kc">false</span>     <span class="c1">// No external APIs</span>
+<span class="p">}</span>
+
+<span class="c1">// calculate - deterministic, no side effects</span>
+<span class="nl">annotations</span><span class="p">:</span> <span class="p">{</span>
+  <span class="na">readOnlyHint</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="na">destructiveHint</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="na">idempotentHint</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>    <span class="c1">// Same inputs = same result</span>
+  <span class="na">openWorldHint</span><span class="p">:</span> <span class="kc">false</span>
+<span class="p">}</span>
+
+<span class="c1">// roll_dice - random results, no side effects</span>
+<span class="nl">annotations</span><span class="p">:</span> <span class="p">{</span>
+  <span class="na">readOnlyHint</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="na">destructiveHint</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="na">idempotentHint</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>   <span class="c1">// Random dice rolls</span>
+  <span class="na">openWorldHint</span><span class="p">:</span> <span class="kc">false</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="annotation-types">Annotation Types</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Annotation</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">readOnlyHint</code></td>
+      <td>Tool has no side effects (safe for automatic execution)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">destructiveHint</code></td>
+      <td>Tool may modify or delete data (requires confirmation)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">idempotentHint</code></td>
+      <td>Safe to call multiple times with same arguments</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">openWorldHint</code></td>
+      <td>May access external services or APIs</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="input-schema">Input Schema</h2>
+
+<p>Tools use JSON Schema 2020-12 for input validation:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">inputSchema</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">object</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">properties</span><span class="p">:</span> <span class="p">{</span>
+    <span class="na">query</span><span class="p">:</span> <span class="p">{</span>
+      <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">string</span><span class="dl">'</span><span class="p">,</span>
+      <span class="na">description</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Search query</span><span class="dl">'</span><span class="p">,</span>
+      <span class="na">minLength</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+      <span class="na">maxLength</span><span class="p">:</span> <span class="mi">100</span>
+    <span class="p">},</span>
+    <span class="na">limit</span><span class="p">:</span> <span class="p">{</span>
+      <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">number</span><span class="dl">'</span><span class="p">,</span>
+      <span class="na">description</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Maximum results</span><span class="dl">'</span><span class="p">,</span>
+      <span class="na">minimum</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+      <span class="na">maximum</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+      <span class="na">default</span><span class="p">:</span> <span class="mi">10</span>
+    <span class="p">},</span>
+    <span class="na">filters</span><span class="p">:</span> <span class="p">{</span>
+      <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">array</span><span class="dl">'</span><span class="p">,</span>
+      <span class="na">items</span><span class="p">:</span> <span class="p">{</span> <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">string</span><span class="dl">'</span> <span class="p">},</span>
+      <span class="na">description</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Optional filters</span><span class="dl">'</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+  <span class="na">required</span><span class="p">:</span> <span class="p">[</span><span class="dl">'</span><span class="s1">query</span><span class="dl">'</span><span class="p">]</span>
+<span class="p">};</span>
+</code></pre></div></div>
+
+<h2 id="tool-results">Tool Results</h2>
+
+<p>Tools return content arrays with optional metadata:</p>
+
+<h3 id="text-content">Text Content</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">return</span> <span class="p">{</span>
+  <span class="na">content</span><span class="p">:</span> <span class="p">[{</span>
+    <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">text</span><span class="dl">'</span><span class="p">,</span>
+    <span class="na">text</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Operation completed successfully</span><span class="dl">'</span>
+  <span class="p">}]</span>
+<span class="p">};</span>
+</code></pre></div></div>
+
+<h3 id="image-content">Image Content</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">return</span> <span class="p">{</span>
+  <span class="na">content</span><span class="p">:</span> <span class="p">[{</span>
+    <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">image</span><span class="dl">'</span><span class="p">,</span>
+    <span class="na">data</span><span class="p">:</span> <span class="nx">base64EncodedImage</span><span class="p">,</span>
+    <span class="na">mimeType</span><span class="p">:</span> <span class="dl">'</span><span class="s1">image/png</span><span class="dl">'</span>
+  <span class="p">}]</span>
+<span class="p">};</span>
+</code></pre></div></div>
+
+<h3 id="resource-content">Resource Content</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">return</span> <span class="p">{</span>
+  <span class="na">content</span><span class="p">:</span> <span class="p">[{</span>
+    <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">resource</span><span class="dl">'</span><span class="p">,</span>
+    <span class="na">resource</span><span class="p">:</span> <span class="p">{</span>
+      <span class="na">uri</span><span class="p">:</span> <span class="dl">'</span><span class="s1">file:///path/to/file.txt</span><span class="dl">'</span><span class="p">,</span>
+      <span class="na">mimeType</span><span class="p">:</span> <span class="dl">'</span><span class="s1">text/plain</span><span class="dl">'</span><span class="p">,</span>
+      <span class="na">text</span><span class="p">:</span> <span class="nx">fileContents</span>
+    <span class="p">}</span>
+  <span class="p">}]</span>
+<span class="p">};</span>
+</code></pre></div></div>
+
+<h3 id="error-results">Error Results</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">return</span> <span class="p">{</span>
+  <span class="na">content</span><span class="p">:</span> <span class="p">[{</span>
+    <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">text</span><span class="dl">'</span><span class="p">,</span>
+    <span class="na">text</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Failed to process request</span><span class="dl">'</span>
+  <span class="p">}],</span>
+  <span class="na">isError</span><span class="p">:</span> <span class="kc">true</span>  <span class="c1">// Marks result as an error</span>
+<span class="p">};</span>
+</code></pre></div></div>
+
+<h2 id="content-annotations">Content Annotations</h2>
+
+<p>Add audience and priority hints:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">return</span> <span class="p">{</span>
+  <span class="na">content</span><span class="p">:</span> <span class="p">[{</span>
+    <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">text</span><span class="dl">'</span><span class="p">,</span>
+    <span class="na">text</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Detailed technical output...</span><span class="dl">'</span><span class="p">,</span>
+    <span class="na">annotations</span><span class="p">:</span> <span class="p">{</span>
+      <span class="na">audience</span><span class="p">:</span> <span class="p">[</span><span class="dl">'</span><span class="s1">assistant</span><span class="dl">'</span><span class="p">],</span>  <span class="c1">// For AI processing</span>
+      <span class="na">priority</span><span class="p">:</span> <span class="mf">0.8</span>              <span class="c1">// Higher = more important</span>
+    <span class="p">}</span>
+  <span class="p">},</span> <span class="p">{</span>
+    <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">text</span><span class="dl">'</span><span class="p">,</span>
+    <span class="na">text</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Summary for the user</span><span class="dl">'</span><span class="p">,</span>
+    <span class="na">annotations</span><span class="p">:</span> <span class="p">{</span>
+      <span class="na">audience</span><span class="p">:</span> <span class="p">[</span><span class="dl">'</span><span class="s1">user</span><span class="dl">'</span><span class="p">],</span>
+      <span class="na">priority</span><span class="p">:</span> <span class="mf">1.0</span>
+    <span class="p">}</span>
+  <span class="p">}]</span>
+<span class="p">};</span>
+</code></pre></div></div>
+
+<h2 id="tool-registry">Tool Registry</h2>
+
+<p>For advanced use cases, use the ToolRegistry directly:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">ToolRegistry</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">registry</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ToolRegistry</span><span class="p">();</span>
+
+<span class="c1">// Register tool</span>
+<span class="nx">registry</span><span class="p">.</span><span class="nx">registerTool</span><span class="p">({</span>
+  <span class="na">name</span><span class="p">:</span> <span class="dl">'</span><span class="s1">calculate</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">description</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Perform calculation</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">inputSchema</span><span class="p">:</span> <span class="p">{</span> <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">object</span><span class="dl">'</span><span class="p">,</span> <span class="na">properties</span><span class="p">:</span> <span class="p">{</span> <span class="na">expression</span><span class="p">:</span> <span class="p">{</span> <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">string</span><span class="dl">'</span> <span class="p">}</span> <span class="p">}</span> <span class="p">},</span>
+  <span class="na">handler</span><span class="p">:</span> <span class="k">async</span> <span class="p">(</span><span class="nx">args</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="c1">// Implementation</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="c1">// List tools with pagination</span>
+<span class="kd">const</span> <span class="p">{</span> <span class="nx">tools</span><span class="p">,</span> <span class="nx">nextCursor</span> <span class="p">}</span> <span class="o">=</span> <span class="nx">registry</span><span class="p">.</span><span class="nx">listTools</span><span class="p">(</span><span class="kc">undefined</span><span class="p">,</span> <span class="mi">50</span><span class="p">);</span>
+
+<span class="c1">// Listen for changes</span>
+<span class="nx">registry</span><span class="p">.</span><span class="nx">onToolsChanged</span><span class="p">(()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">'</span><span class="s1">Tools list updated</span><span class="dl">'</span><span class="p">);</span>
+<span class="p">});</span>
+</code></pre></div></div>
+
+<h2 id="toolscall-request">tools/call Request</h2>
+
+<p>Call the <code class="language-plaintext highlighter-rouge">tell_fortune</code> tool:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"jsonrpc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"method"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tools/call"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tell_fortune"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"arguments"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"category"</span><span class="p">:</span><span class="w"> </span><span class="s2">"wealth"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"mood"</span><span class="p">:</span><span class="w"> </span><span class="s2">"optimistic"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>Response:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"jsonrpc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"result"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"content"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"text"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"text"</span><span class="p">:</span><span class="w"> </span><span class="s2">"{</span><span class="se">\"</span><span class="s2">category</span><span class="se">\"</span><span class="s2">:</span><span class="se">\"</span><span class="s2">wealth</span><span class="se">\"</span><span class="s2">,</span><span class="se">\"</span><span class="s2">mood</span><span class="se">\"</span><span class="s2">:</span><span class="se">\"</span><span class="s2">optimistic</span><span class="se">\"</span><span class="s2">,</span><span class="se">\"</span><span class="s2">fortune</span><span class="se">\"</span><span class="s2">:</span><span class="se">\"</span><span class="s2">Financial opportunities are heading your way.</span><span class="se">\"</span><span class="s2">}"</span><span class="w">
+    </span><span class="p">}]</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h2 id="toolslist-request-and-response">tools/list Request and Response</h2>
+
+<p>Request available tools:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"jsonrpc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"method"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tools/list"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>Response from this server:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"jsonrpc"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"result"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"tools"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+      </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"calculate"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Perform basic arithmetic operations"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"inputSchema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span><span class="w"> </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"operation"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="nl">"a"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="nl">"b"</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"annotations"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"readOnlyHint"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nl">"idempotentHint"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}</span><span class="w">
+      </span><span class="p">},</span><span class="w">
+      </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"roll_dice"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Roll dice using standard notation"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"inputSchema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span><span class="w"> </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"notation"</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"annotations"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"readOnlyHint"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nl">"idempotentHint"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">}</span><span class="w">
+      </span><span class="p">},</span><span class="w">
+      </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tell_fortune"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Get a mystical fortune"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"inputSchema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span><span class="w"> </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"category"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="nl">"mood"</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"annotations"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"readOnlyHint"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nl">"idempotentHint"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">}</span><span class="w">
+      </span><span class="p">}</span><span class="w">
+    </span><span class="p">]</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h2 id="related">Related</h2>
+
+<ul>
+  <li><a href="protocol">Protocol Guide</a> - JSON-RPC format</li>
+  <li><a href="completions">Completions Guide</a> - Argument auto-complete</li>
+  <li><a href="../api/tools">API Reference</a> - Tools exports</li>
+</ul>
+
+
+<hr>
+
+<div class="nav-footer">
+  <p><strong>Navigation:</strong>
+    <a href="/">Home</a> |
+    <a href="/getting-started/installation">Getting Started</a> |
+    <a href="/guides/protocol">Guides</a> |
+    <a href="/api/protocol">API Reference</a> |
+    <a href="/examples/stdio-server">Examples</a> |
+    <a href="/reference/environment">Reference</a>
+  </p>
+</div>
+
+
+
+      </section>
+      <footer>
+        
+        <p>This project is maintained by <a href="https://github.com/chiefbuilder">chiefbuilder</a></p>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="/assets/js/scale.fix.js"></script>
+  </body>
+</html>

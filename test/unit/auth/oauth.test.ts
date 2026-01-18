@@ -694,6 +694,311 @@ describe('OAuthClient', () => {
     });
   });
 
+  describe('Network Failure Handling', () => {
+    let mockFetch: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      mockFetch = vi.fn();
+      global.fetch = mockFetch;
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    describe('exchangeCode network failures', () => {
+      it('should handle network timeout during token exchange', async () => {
+        const abortError = new Error('The operation was aborted due to timeout');
+        abortError.name = 'AbortError';
+        mockFetch.mockRejectedValue(abortError);
+
+        await expect(
+          client.exchangeCode({
+            code: 'auth-code',
+            codeVerifier: 'a'.repeat(43),
+            redirectUri: 'https://app.example.com/callback',
+          })
+        ).rejects.toThrow('The operation was aborted due to timeout');
+      });
+
+      it('should handle connection refused errors', async () => {
+        const connectionError = new TypeError('fetch failed: Connection refused');
+        mockFetch.mockRejectedValue(connectionError);
+
+        await expect(
+          client.exchangeCode({
+            code: 'auth-code',
+            codeVerifier: 'a'.repeat(43),
+            redirectUri: 'https://app.example.com/callback',
+          })
+        ).rejects.toThrow('Connection refused');
+      });
+
+      it('should handle DNS resolution failures', async () => {
+        const dnsError = new TypeError('getaddrinfo ENOTFOUND unknown.host');
+        mockFetch.mockRejectedValue(dnsError);
+
+        await expect(
+          client.exchangeCode({
+            code: 'auth-code',
+            codeVerifier: 'a'.repeat(43),
+            redirectUri: 'https://app.example.com/callback',
+          })
+        ).rejects.toThrow('ENOTFOUND');
+      });
+
+      it('should handle connection reset/dropped', async () => {
+        const resetError = new Error('Connection reset by peer');
+        resetError.name = 'ConnectionResetError';
+        mockFetch.mockRejectedValue(resetError);
+
+        await expect(
+          client.exchangeCode({
+            code: 'auth-code',
+            codeVerifier: 'a'.repeat(43),
+            redirectUri: 'https://app.example.com/callback',
+          })
+        ).rejects.toThrow('Connection reset by peer');
+      });
+
+      it('should handle generic network failure', async () => {
+        mockFetch.mockRejectedValue(new TypeError('Network request failed'));
+
+        await expect(
+          client.exchangeCode({
+            code: 'auth-code',
+            codeVerifier: 'a'.repeat(43),
+            redirectUri: 'https://app.example.com/callback',
+          })
+        ).rejects.toThrow('Network request failed');
+      });
+
+      it('should handle partial response / JSON parse error', async () => {
+        mockFetch.mockResolvedValue({
+          ok: true,
+          json: () => Promise.reject(new SyntaxError('Unexpected end of JSON input')),
+        });
+
+        await expect(
+          client.exchangeCode({
+            code: 'auth-code',
+            codeVerifier: 'a'.repeat(43),
+            redirectUri: 'https://app.example.com/callback',
+          })
+        ).rejects.toThrow('Unexpected end of JSON input');
+      });
+    });
+
+    describe('Malformed token responses from IdP', () => {
+      it('should reject token response missing access_token', async () => {
+        mockFetch.mockResolvedValue({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              token_type: 'Bearer',
+              expires_in: 3600,
+              // Missing access_token
+            }),
+        });
+
+        await expect(
+          client.exchangeCode({
+            code: 'auth-code',
+            codeVerifier: 'a'.repeat(43),
+            redirectUri: 'https://app.example.com/callback',
+          })
+        ).rejects.toThrow();
+      });
+
+      it('should reject token response missing token_type', async () => {
+        mockFetch.mockResolvedValue({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              access_token: 'valid-token',
+              expires_in: 3600,
+              // Missing token_type
+            }),
+        });
+
+        await expect(
+          client.exchangeCode({
+            code: 'auth-code',
+            codeVerifier: 'a'.repeat(43),
+            redirectUri: 'https://app.example.com/callback',
+          })
+        ).rejects.toThrow();
+      });
+
+      it('should reject token response with wrong token_type', async () => {
+        mockFetch.mockResolvedValue({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              access_token: 'valid-token',
+              token_type: 'Basic', // Should be Bearer
+              expires_in: 3600,
+            }),
+        });
+
+        await expect(
+          client.exchangeCode({
+            code: 'auth-code',
+            codeVerifier: 'a'.repeat(43),
+            redirectUri: 'https://app.example.com/callback',
+          })
+        ).rejects.toThrow();
+      });
+
+      it('should reject completely empty response body', async () => {
+        mockFetch.mockResolvedValue({
+          ok: true,
+          json: () => Promise.resolve(null),
+        });
+
+        await expect(
+          client.exchangeCode({
+            code: 'auth-code',
+            codeVerifier: 'a'.repeat(43),
+            redirectUri: 'https://app.example.com/callback',
+          })
+        ).rejects.toThrow();
+      });
+
+      it('should reject non-object response body', async () => {
+        mockFetch.mockResolvedValue({
+          ok: true,
+          json: () => Promise.resolve('not an object'),
+        });
+
+        await expect(
+          client.exchangeCode({
+            code: 'auth-code',
+            codeVerifier: 'a'.repeat(43),
+            redirectUri: 'https://app.example.com/callback',
+          })
+        ).rejects.toThrow();
+      });
+
+      it('should reject array response body', async () => {
+        mockFetch.mockResolvedValue({
+          ok: true,
+          json: () => Promise.resolve([{ access_token: 'token' }]),
+        });
+
+        await expect(
+          client.exchangeCode({
+            code: 'auth-code',
+            codeVerifier: 'a'.repeat(43),
+            redirectUri: 'https://app.example.com/callback',
+          })
+        ).rejects.toThrow();
+      });
+    });
+
+    describe('refreshToken network failures', () => {
+      it('should handle network timeout during token refresh', async () => {
+        const abortError = new Error('The operation was aborted due to timeout');
+        abortError.name = 'AbortError';
+        mockFetch.mockRejectedValue(abortError);
+
+        await expect(client.refreshToken('refresh-token-value')).rejects.toThrow(
+          'The operation was aborted due to timeout'
+        );
+      });
+
+      it('should handle connection refused during refresh', async () => {
+        mockFetch.mockRejectedValue(new TypeError('fetch failed: Connection refused'));
+
+        await expect(client.refreshToken('refresh-token-value')).rejects.toThrow(
+          'Connection refused'
+        );
+      });
+
+      it('should handle partial response during refresh', async () => {
+        mockFetch.mockResolvedValue({
+          ok: true,
+          json: () => Promise.reject(new SyntaxError('Unexpected token in JSON')),
+        });
+
+        await expect(client.refreshToken('refresh-token-value')).rejects.toThrow(
+          'Unexpected token'
+        );
+      });
+
+      it('should handle malformed refresh response', async () => {
+        mockFetch.mockResolvedValue({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              // Missing required fields
+              expires_in: 3600,
+            }),
+        });
+
+        await expect(client.refreshToken('refresh-token-value')).rejects.toThrow();
+      });
+    });
+
+    describe('handleCallback network failures', () => {
+      let session: AuthorizationSession;
+
+      beforeEach(() => {
+        // Need a valid session for handleCallback tests
+        const originalFetch = global.fetch;
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          json: () => Promise.resolve(MOCK_TOKEN_RESPONSE),
+        });
+        const result = client.buildAuthorizationUrl();
+        session = result.session;
+        global.fetch = mockFetch; // Restore the test mock
+      });
+
+      it('should propagate network errors during callback handling', async () => {
+        mockFetch.mockRejectedValue(new TypeError('Network request failed'));
+
+        const params: AuthorizationCallbackParams = {
+          code: 'auth-code',
+          state: session.state,
+        };
+
+        await expect(client.handleCallback(params, session)).rejects.toThrow(
+          'Network request failed'
+        );
+      });
+
+      it('should propagate timeout errors during callback handling', async () => {
+        const abortError = new Error('Request timed out');
+        abortError.name = 'AbortError';
+        mockFetch.mockRejectedValue(abortError);
+
+        const params: AuthorizationCallbackParams = {
+          code: 'auth-code',
+          state: session.state,
+        };
+
+        await expect(client.handleCallback(params, session)).rejects.toThrow('Request timed out');
+      });
+
+      it('should handle connection drop after partial response in callback', async () => {
+        mockFetch.mockResolvedValue({
+          ok: true,
+          json: () => Promise.reject(new Error('Connection closed unexpectedly')),
+        });
+
+        const params: AuthorizationCallbackParams = {
+          code: 'auth-code',
+          state: session.state,
+        };
+
+        await expect(client.handleCallback(params, session)).rejects.toThrow(
+          'Connection closed unexpectedly'
+        );
+      });
+    });
+  });
+
   describe('refreshToken', () => {
     let mockFetch: ReturnType<typeof vi.fn>;
 

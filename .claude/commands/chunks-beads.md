@@ -53,25 +53,163 @@ Analyze the spec for natural boundaries.
 
 **For each chunk, capture**:
 - Title (clear, actionable)
-- Goal (what "done" looks like)
+- Goal (one-line summary of intent)
+- Done When (explicit acceptance criteria - what must be true to close this chunk)
 - Scope (files/components)
 - Dependencies (what must exist first)
 - Size: S (< 1hr), M (1-3hr), L (half-day)
 - Risk: None | reason
 
-**Split if**: >7 files, multiple "done" states
+### Writing "Done When" Criteria
+
+Each chunk MUST have clear, verifiable acceptance criteria that the **chunk-auditor** can verify. Use this format:
+
+```
+Done When:
+- [ ] [Observable outcome 1]
+- [ ] [Observable outcome 2]
+- [ ] Validation passes (typecheck, lint, build)
+- [ ] Discovered issues filed to beads
+```
+
+**Note:** "Validation passes" is the default. Add explicit test criteria only for business logic, API endpoints, or critical flows.
+
+### Criteria Quality Checklist
+
+Each criterion MUST be:
+- **Testable**: Can verify by running code, checking output, or viewing behavior
+- **Specific**: No ambiguity (avoid "works correctly", "is functional", "handles errors")
+- **Observable**: Clear success signal (file exists, test passes, endpoint returns X)
+- **Auditable**: The chunk-auditor agent can verify it programmatically
+
+**BAD criteria** (vague, unverifiable):
+```
+- [ ] Works correctly
+- [ ] Handles edge cases
+- [ ] Is well-tested
+- [ ] Follows best practices
+```
+
+**GOOD criteria** (specific, auditable):
+```
+- [ ] Function returns empty array when input is null
+- [ ] 404 response includes "resource not found" message
+- [ ] Component renders loading spinner while fetching
+- [ ] All tests in user.test.ts pass
+```
+
+### Criteria Categories
+
+Generate criteria in these categories for completeness:
+
+| Category | What to verify | Example |
+|----------|---------------|---------|
+| **Functional** | Core behavior works | "POST /users creates user and returns 201" |
+| **Integration** | Connects to existing code | "Uses AuthService for token validation" |
+| **Validation** | Typecheck, lint, build pass | "Validation passes" |
+| **Edge cases** | Handles boundaries | "Empty list shows 'No items' message" |
+| **Tests** | Only when high-value | "Unit tests for auth edge cases" (business logic only) |
+| **Tracking** | Work is documented | "Discovered issues filed to beads" |
+
+### Examples
+
+```
+# API endpoint chunk (business logic → tests required)
+Done When:
+- [ ] GET /api/users returns paginated user list with max 20 items
+- [ ] POST /api/users creates user and returns 201 with user object
+- [ ] POST /api/users with invalid email returns 400 with "invalid email" error
+- [ ] Missing auth token returns 401
+- [ ] Validation passes
+- [ ] Integration tests for success/error cases
+- [ ] Discovered issues filed to beads
+
+# UI component chunk (no new tests, just validation)
+Done When:
+- [ ] UserList component renders in src/components/UserList.tsx
+- [ ] Displays name and email columns in table format
+- [ ] Click on row calls onSelect prop with user id
+- [ ] Empty state shows "No users found" message
+- [ ] Loading state shows spinner component
+- [ ] Validation passes
+- [ ] Discovered issues filed to beads
+
+# Refactoring chunk (don't break existing tests)
+Done When:
+- [ ] Old getUserById function removed from src/api/users.ts
+- [ ] New getUser function exported from src/services/user-service.ts
+- [ ] All callers updated (grep shows 0 references to getUserById)
+- [ ] Validation passes
+- [ ] Existing tests still pass
+- [ ] Discovered issues filed to beads
+```
+
+**Split if**: >7 files, multiple "done" states, or criteria span unrelated behaviors
 **Merge if**: <30 min, no standalone value
 
 ## Step 4: Order by Dependencies
 
-Group into phases:
+### Automatic Dependency Detection
+
+Before ordering chunks, analyze for **implicit dependencies** that may not be obvious:
+
+**Scan for dependency signals:**
+
+```bash
+# For each chunk's scope files, search for imports/references to other chunks' files
+grep -r "import.*from" src/  # Find import statements
+grep -r "require(" src/      # Find CommonJS requires
+```
+
+**Dependency types to detect:**
+
+| Type | Signal | Example |
+|------|--------|---------|
+| **Import/Module** | Chunk B imports from files Chunk A creates | `import { User } from './models/user'` |
+| **Data** | Chunk B needs types/schemas Chunk A defines | Interface defined in Chunk A, used in Chunk B |
+| **API** | Chunk B calls endpoints/functions Chunk A implements | `await api.getUsers()` calling Chunk A's endpoint |
+| **Test** | Chunk B's tests require Chunk A's fixtures/mocks | Test file imports from Chunk A's test utils |
+| **Config** | Chunk B needs configuration Chunk A sets up | Database connection, env vars, routes |
+
+**Detection process:**
+
+1. List all files in each chunk's scope
+2. For each chunk, grep for references to other chunks' files:
+   ```bash
+   # Example: Check if CHUNK-03 files reference CHUNK-01 files
+   grep -l "user-model\|UserModel\|/models/user" [CHUNK-03 scope files]
+   ```
+3. If references found, suggest dependency
+
+**Auto-suggest format:**
+
+```
+Detected dependency: CHUNK-03 → CHUNK-01
+  Reason: src/services/user-service.ts imports from src/models/user.ts
+  CHUNK-03 (User Service) cannot start until CHUNK-01 (User Model) is complete.
+
+  Add this dependency? [Yes/No]
+```
+
+### Group into Phases
+
+After resolving dependencies:
+
 ```
 Phase 1: No dependencies, can start immediately
 Phase 2: Depends on Phase 1
+Phase 3: Depends on Phase 2
 ...
 ```
 
-Note parallel opportunities within each phase.
+**Parallel opportunities**: Chunks in the same phase with non-overlapping scopes can run in parallel.
+
+```
+Phase 2:
+  ├── CHUNK-03: User Service (depends on CHUNK-01)     ┐
+  │                                                     ├─ Can run in parallel
+  └── CHUNK-04: Auth Middleware (depends on CHUNK-02)  ┘
+```
 
 ## Step 5: Write Breakdown
 
@@ -95,7 +233,12 @@ Save to `docs/breakdowns/<spec-name>-chunks.md`:
 ## Phase 1: [Name]
 
 ### [ ] CHUNK-01: [Title]
-**Goal**: [What "done" looks like]
+**Goal**: [One-line summary of intent]
+**Done When**:
+- [ ] [Criterion 1]
+- [ ] [Criterion 2]
+- [ ] Tests pass / No regressions
+
 **Scope**: [files/components]
 **Size**: S/M/L
 **Risk**: [None | reason]
@@ -135,10 +278,24 @@ Use spec name as label for project isolation (enables `/auto --label=<name>`):
 
 ```bash
 # Phase 1 chunks (no dependencies)
-bd create "CHUNK-01: [Title]" --type=task --priority=2 --label=[spec-name] -d "[Goal]. Scope: [files]. Size: [S/M/L]"
+bd create "CHUNK-01: [Title]" --type=task --priority=2 --label=[spec-name] -d "[Goal]
+
+Done When:
+- [ ] [Criterion 1]
+- [ ] [Criterion 2]
+- [ ] Tests pass
+
+Scope: [files]. Size: [S/M/L]"
 
 # Phase 2+ chunks (with dependencies)
-bd create "CHUNK-03: [Title]" --type=task --priority=2 --label=[spec-name] -d "[Goal]. Scope: [files]. Size: [S/M/L]"
+bd create "CHUNK-03: [Title]" --type=task --priority=2 --label=[spec-name] -d "[Goal]
+
+Done When:
+- [ ] [Criterion 1]
+- [ ] [Criterion 2]
+- [ ] Tests pass
+
+Scope: [files]. Size: [S/M/L]"
 
 # Add dependency: CHUNK-03 depends on CHUNK-01 (CHUNK-03 cannot start until CHUNK-01 is done)
 bd dep add [CHUNK-03-id] [CHUNK-01-id]
@@ -196,8 +353,9 @@ To implement manually:
 | Chunk Field | Beads Field |
 |-------------|-------------|
 | Title | Issue title |
-| Goal + Scope + Size | Description |
-| Size S/M/L | (informational in description) |
+| Goal | Description (first line) |
+| Done When | Description (acceptance criteria checklist) |
+| Scope + Size | Description (footer info) |
 | Risk flag | Priority 1 (high) vs 2 (normal) |
 | Dependencies | `bd dep add` |
 | Phase | (implicit via dependencies) |
@@ -211,3 +369,4 @@ To implement manually:
 - Forgetting to update chunks.md with issue IDs
 - Too granular chunks (overhead exceeds value)
 - Not flagging risky chunks with priority 1
+- Vague "Done When" criteria (e.g., "works correctly" - not verifiable)

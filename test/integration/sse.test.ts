@@ -11,15 +11,11 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { HttpTransport } from '../../src/transport/http.js';
 import { createSuccessResponse, createNotification, JsonRpcNotification } from '../../src/protocol/jsonrpc.js';
 import { PROTOCOL_VERSION } from '../../src/protocol/lifecycle.js';
+import { getTestPort } from '../helpers/ports.js';
 
 // =============================================================================
 // Test Helpers
 // =============================================================================
-
-let portCounter = 4200;
-function getTestPort(): number {
-  return portCounter++;
-}
 
 interface TestServer {
   transport: HttpTransport;

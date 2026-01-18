@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>CLI Reference | MCP Reference Server</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="CLI Reference" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<meta property="og:description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<link rel="canonical" href="http://localhost:4000/reference/cli.html" />
+<meta property="og:url" content="http://localhost:4000/reference/cli.html" />
+<meta property="og:site_name" content="MCP Reference Server" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="CLI Reference" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification","headline":"CLI Reference","url":"http://localhost:4000/reference/cli.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=4084654cb939e8940665a91c4c56b28d8f437143">
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="http://localhost:4000/">MCP Reference Server</a></h1>
+
+        
+
+        <p>A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification</p>
+
+        
+        <p class="view"><a href="https://github.com/chiefbuilder/mcp-reference-server">View the Project on GitHub <small>chiefbuilder/mcp-reference-server</small></a></p>
+        
+
+        
+
+        
+      </header>
+      <section>
+
+      <h1 id="cli-reference">CLI Reference</h1>
+
+<p>Command-line interface for MCP Reference Server.</p>
+
+<h2 id="installation">Installation</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Global installation</span>
+npm <span class="nb">install</span> <span class="nt">-g</span> mcp-reference-server
+
+<span class="c"># Or use npx</span>
+npx mcp-reference-server
+</code></pre></div></div>
+
+<h2 id="basic-usage">Basic Usage</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Start server with default settings</span>
+mcp-reference-server
+
+<span class="c"># Start with environment variables</span>
+<span class="nv">MCP_TRANSPORT</span><span class="o">=</span>http <span class="nv">MCP_PORT</span><span class="o">=</span>8080 mcp-reference-server
+
+<span class="c"># Start with debug logging</span>
+<span class="nv">MCP_DEBUG</span><span class="o">=</span><span class="nb">true </span>mcp-reference-server
+</code></pre></div></div>
+
+<h2 id="transport-modes">Transport Modes</h2>
+
+<h3 id="stdio-transport-default">stdio Transport (Default)</h3>
+
+<p>For CLI integration and local processes:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mcp-reference-server
+<span class="c"># Reads JSON-RPC from stdin, writes to stdout</span>
+</code></pre></div></div>
+
+<h3 id="http-transport">HTTP Transport</h3>
+
+<p>For web applications and remote access:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">MCP_TRANSPORT</span><span class="o">=</span>http <span class="nv">MCP_PORT</span><span class="o">=</span>3000 mcp-reference-server
+<span class="c"># Starts HTTP server on specified port</span>
+</code></pre></div></div>
+
+<h3 id="both-transports">Both Transports</h3>
+
+<p>Run both simultaneously:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">MCP_TRANSPORT</span><span class="o">=</span>both <span class="nv">MCP_PORT</span><span class="o">=</span>3000 mcp-reference-server
+<span class="c"># stdio + HTTP on port 3000</span>
+</code></pre></div></div>
+
+<h2 id="common-options-via-environment">Common Options via Environment</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_TRANSPORT</code></td>
+      <td><code class="language-plaintext highlighter-rouge">stdio</code>, <code class="language-plaintext highlighter-rouge">http</code>, or <code class="language-plaintext highlighter-rouge">both</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_PORT</code></td>
+      <td>HTTP port number</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_HOST</code></td>
+      <td>HTTP host address</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_DEBUG</code></td>
+      <td>Enable debug logging</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">MCP_LOG_LEVEL</code></td>
+      <td>Set log verbosity</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="using-with-claude-desktop">Using with Claude Desktop</h2>
+
+<p>Add to <code class="language-plaintext highlighter-rouge">claude_desktop_config.json</code>:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"mcpServers"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"reference-server"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"command"</span><span class="p">:</span><span class="w"> </span><span class="s2">"mcp-reference-server"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>Or with custom settings:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"mcpServers"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"reference-server"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"command"</span><span class="p">:</span><span class="w"> </span><span class="s2">"mcp-reference-server"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"env"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"MCP_DEBUG"</span><span class="p">:</span><span class="w"> </span><span class="s2">"true"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"MCP_LOG_LEVEL"</span><span class="p">:</span><span class="w"> </span><span class="s2">"debug"</span><span class="w">
+      </span><span class="p">}</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h2 id="using-with-mcp-inspector">Using with MCP Inspector</h2>
+
+<p>Test the server interactively:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Direct invocation</span>
+npx @modelcontextprotocol/inspector mcp-reference-server
+
+<span class="c"># With HTTP transport</span>
+<span class="nv">MCP_TRANSPORT</span><span class="o">=</span>http <span class="nv">MCP_PORT</span><span class="o">=</span>3000 npx @modelcontextprotocol/inspector
+<span class="c"># Then open http://localhost:3000 in browser</span>
+</code></pre></div></div>
+
+<h2 id="development-mode">Development Mode</h2>
+
+<p>For development with hot reloading:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Using tsx for TypeScript</span>
+npm run dev
+
+<span class="c"># Equivalent to:</span>
+npx tsx src/cli.ts
+</code></pre></div></div>
+
+<h2 id="custom-entry-point">Custom Entry Point</h2>
+
+<p>Create a custom server script:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// my-server.ts</span>
+<span class="k">import</span> <span class="p">{</span> <span class="nx">MCPServer</span><span class="p">,</span> <span class="nx">StdioTransport</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">server</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">MCPServer</span><span class="p">({</span>
+  <span class="na">name</span><span class="p">:</span> <span class="dl">'</span><span class="s1">my-custom-server</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">version</span><span class="p">:</span> <span class="dl">'</span><span class="s1">1.0.0</span><span class="dl">'</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="c1">// Add your tools...</span>
+
+<span class="kd">const</span> <span class="nx">transport</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">StdioTransport</span><span class="p">();</span>
+<span class="k">await</span> <span class="nx">server</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">transport</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Run it:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>npx tsx my-server.ts
+</code></pre></div></div>
+
+<h2 id="signals">Signals</h2>
+
+<p>The server handles these signals for graceful shutdown:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Signal</th>
+      <th>Behavior</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">SIGINT</code></td>
+      <td>Graceful shutdown (Ctrl+C)</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">SIGTERM</code></td>
+      <td>Graceful shutdown</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="exit-codes">Exit Codes</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Code</th>
+      <th>Meaning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">0</code></td>
+      <td>Normal exit</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">1</code></td>
+      <td>Error during startup or operation</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="logging-output">Logging Output</h2>
+
+<ul>
+  <li><strong>stdio transport</strong>: Logs go to stderr (stdout is for MCP messages)</li>
+  <li><strong>HTTP transport</strong>: Logs go to stdout</li>
+</ul>
+
+<p>Control log format:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># JSON format (default in production)</span>
+<span class="nv">MCP_LOG_LEVEL</span><span class="o">=</span>info mcp-reference-server
+
+<span class="c"># Debug format (more verbose)</span>
+<span class="nv">MCP_DEBUG</span><span class="o">=</span><span class="nb">true </span>mcp-reference-server
+</code></pre></div></div>
+
+<h2 id="health-checks-http">Health Checks (HTTP)</h2>
+
+<p>When using HTTP transport:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Overall health</span>
+curl http://localhost:3000/health
+
+<span class="c"># Readiness probe (for load balancers)</span>
+curl http://localhost:3000/health/ready
+
+<span class="c"># Liveness probe (for orchestrators)</span>
+curl http://localhost:3000/health/live
+</code></pre></div></div>
+
+<h2 id="examples">Examples</h2>
+
+<h3 id="production-http-server">Production HTTP Server</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">MCP_TRANSPORT</span><span class="o">=</span>http <span class="se">\</span>
+<span class="nv">MCP_PORT</span><span class="o">=</span>3000 <span class="se">\</span>
+<span class="nv">MCP_HOST</span><span class="o">=</span>0.0.0.0 <span class="se">\</span>
+<span class="nv">MCP_LOG_LEVEL</span><span class="o">=</span>info <span class="se">\</span>
+<span class="nv">MCP_REQUEST_TIMEOUT_MS</span><span class="o">=</span>30000 <span class="se">\</span>
+mcp-reference-server
+</code></pre></div></div>
+
+<h3 id="debug-session">Debug Session</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">MCP_DEBUG</span><span class="o">=</span><span class="nb">true</span> <span class="se">\</span>
+<span class="nv">MCP_LOG_LEVEL</span><span class="o">=</span>debug <span class="se">\</span>
+mcp-reference-server
+</code></pre></div></div>
+
+<h3 id="with-authentication">With Authentication</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">MCP_TRANSPORT</span><span class="o">=</span>http <span class="se">\</span>
+<span class="nv">MCP_PORT</span><span class="o">=</span>3000 <span class="se">\</span>
+<span class="nv">MCP_AUTH0_DOMAIN</span><span class="o">=</span>your-tenant.auth0.com <span class="se">\</span>
+<span class="nv">MCP_AUTH0_AUDIENCE</span><span class="o">=</span>https://api.example.com <span class="se">\</span>
+mcp-reference-server
+</code></pre></div></div>
+
+<h2 id="related">Related</h2>
+
+<ul>
+  <li><a href="../getting-started/installation">Installation</a> - Setup guide</li>
+  <li><a href="../getting-started/configuration">Configuration</a> - All options</li>
+  <li><a href="environment">Environment Variables</a> - Complete variable list</li>
+</ul>
+
+
+<hr>
+
+<div class="nav-footer">
+  <p><strong>Navigation:</strong>
+    <a href="/">Home</a> |
+    <a href="/getting-started/installation">Getting Started</a> |
+    <a href="/guides/protocol">Guides</a> |
+    <a href="/api/protocol">API Reference</a> |
+    <a href="/examples/stdio-server">Examples</a> |
+    <a href="/reference/environment">Reference</a>
+  </p>
+</div>
+
+
+
+      </section>
+      <footer>
+        
+        <p>This project is maintained by <a href="https://github.com/chiefbuilder">chiefbuilder</a></p>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="/assets/js/scale.fix.js"></script>
+  </body>
+</html>

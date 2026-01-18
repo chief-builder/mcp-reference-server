@@ -12,15 +12,11 @@ import {
   registerBuiltInChecks,
 } from '../../../src/observability/health.js';
 import { ShutdownManager } from '../../../src/server.js';
+import { getTestPort } from '../../helpers/ports.js';
 
 // =============================================================================
 // Test Helpers
 // =============================================================================
-
-let portCounter = 4100;
-function getTestPort(): number {
-  return portCounter++;
-}
 
 async function startServer(app: Express, port: number): Promise<Server> {
   return new Promise((resolve, reject) => {

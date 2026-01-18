@@ -36,15 +36,11 @@ import {
   JsonRpcErrorCodes,
   JSONRPC_VERSION,
 } from '../../src/protocol/jsonrpc.js';
+import { getTestPort } from '../helpers/ports.js';
 
 // =============================================================================
 // Test Helpers
 // =============================================================================
-
-let portCounter = 4500;
-function getTestPort(): number {
-  return portCounter++;
-}
 
 interface TestServer {
   transport: HttpTransport;

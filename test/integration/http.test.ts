@@ -17,15 +17,11 @@ import {
   JSONRPC_VERSION,
 } from '../../src/protocol/jsonrpc.js';
 import { PROTOCOL_VERSION } from '../../src/protocol/lifecycle.js';
+import { getTestPort } from '../helpers/ports.js';
 
 // =============================================================================
 // Test Helpers
 // =============================================================================
-
-let portCounter = 4100;
-function getTestPort(): number {
-  return portCounter++;
-}
 
 interface TestServer {
   transport: HttpTransport;

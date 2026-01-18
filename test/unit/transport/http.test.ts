@@ -21,15 +21,11 @@ import {
   JSONRPC_VERSION,
 } from '../../../src/protocol/jsonrpc.js';
 import { PROTOCOL_VERSION } from '../../../src/protocol/lifecycle.js';
+import { getTestPort } from '../../helpers/ports.js';
 
 // =============================================================================
 // Test Helpers
 // =============================================================================
-
-let portCounter = 3100;
-function getTestPort(): number {
-  return portCounter++;
-}
 
 function createTestTransport(options?: Partial<HttpTransportOptions>): HttpTransport {
   return new HttpTransport({
@@ -428,6 +424,35 @@ describe('HttpTransport', () => {
         });
 
         expect(response.status).toBe(200);
+      });
+
+      it('should return 413 for payloads exceeding 100KB', async () => {
+        transport = createTestTransport({ allowedOrigins: ['*'] });
+        transport.setMessageHandler(async () => createSuccessResponse(1, { result: 'ok' }));
+        await transport.start();
+
+        const port = (transport as unknown as { port: number }).port;
+        // Create a payload larger than 100KB (100 * 1024 = 102400 bytes)
+        const largePayload = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'test',
+          params: {
+            data: 'x'.repeat(110 * 1024), // ~110KB of data
+          },
+        };
+
+        const response = await fetch(`http://127.0.0.1:${port}/mcp`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'MCP-Protocol-Version': PROTOCOL_VERSION,
+            'MCP-Session-Id': transport.getSessionManager().createSession().id,
+          },
+          body: JSON.stringify(largePayload),
+        });
+
+        expect(response.status).toBe(413);
       });
     });
 

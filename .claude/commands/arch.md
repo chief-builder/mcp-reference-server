@@ -132,6 +132,10 @@ graph LR
 
 [Key entities - keep it minimal]
 
+## Testing Strategy
+
+Validation (typecheck, lint, build) required for all chunks. New tests only for: business logic, API endpoints, critical user flows. UI components rely on validation + E2E only.
+
 ## Monitor
 
 Libraries with concerns:

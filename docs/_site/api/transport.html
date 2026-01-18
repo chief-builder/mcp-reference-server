@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Transport API | MCP Reference Server</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Transport API" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<meta property="og:description" content="A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification" />
+<link rel="canonical" href="http://localhost:4000/api/transport.html" />
+<meta property="og:url" content="http://localhost:4000/api/transport.html" />
+<meta property="og:site_name" content="MCP Reference Server" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Transport API" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification","headline":"Transport API","url":"http://localhost:4000/api/transport.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=4084654cb939e8940665a91c4c56b28d8f437143">
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="http://localhost:4000/">MCP Reference Server</a></h1>
+
+        
+
+        <p>A learning project implementing the Model Context Protocol (MCP) 2025-11-25 specification</p>
+
+        
+        <p class="view"><a href="https://github.com/chiefbuilder/mcp-reference-server">View the Project on GitHub <small>chiefbuilder/mcp-reference-server</small></a></p>
+        
+
+        
+
+        
+      </header>
+      <section>
+
+      <h1 id="transport-api-reference">Transport API Reference</h1>
+
+<p>Exports for stdio and HTTP transports, session management, and SSE streaming.</p>
+
+<h2 id="stdio-transport-transportstdio">stdio Transport (<code class="language-plaintext highlighter-rouge">transport/stdio</code>)</h2>
+
+<h3 id="stdiotransport-class">StdioTransport Class</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nx">StdioTransport</span> <span class="p">{</span>
+  <span class="kd">constructor</span><span class="p">(</span><span class="nx">options</span><span class="p">?:</span> <span class="nx">StdioTransportOptions</span><span class="p">);</span>
+  <span class="nx">start</span><span class="p">():</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span><span class="p">;</span>
+  <span class="nx">stop</span><span class="p">():</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span><span class="p">;</span>
+  <span class="nx">send</span><span class="p">(</span><span class="nx">message</span><span class="p">:</span> <span class="nx">JsonRpcMessage</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+  <span class="nx">onMessage</span><span class="p">(</span><span class="nx">handler</span><span class="p">:</span> <span class="p">(</span><span class="nx">message</span><span class="p">:</span> <span class="nx">JsonRpcMessage</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="k">void</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+  <span class="nx">onClose</span><span class="p">(</span><span class="nx">handler</span><span class="p">:</span> <span class="p">()</span> <span class="o">=&gt;</span> <span class="k">void</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+  <span class="nx">onError</span><span class="p">(</span><span class="nx">handler</span><span class="p">:</span> <span class="p">(</span><span class="nx">error</span><span class="p">:</span> <span class="nb">Error</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="k">void</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">StdioTransportOptions</span> <span class="p">{</span>
+  <span class="nl">input</span><span class="p">?:</span> <span class="nx">NodeJS</span><span class="p">.</span><span class="nx">ReadableStream</span><span class="p">;</span>
+  <span class="nl">output</span><span class="p">?:</span> <span class="nx">NodeJS</span><span class="p">.</span><span class="nx">WritableStream</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="usage">Usage</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">StdioTransport</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">transport</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">StdioTransport</span><span class="p">();</span>
+
+<span class="nx">transport</span><span class="p">.</span><span class="nx">onMessage</span><span class="p">((</span><span class="nx">message</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">'</span><span class="s1">Received:</span><span class="dl">'</span><span class="p">,</span> <span class="nx">message</span><span class="p">);</span>
+<span class="p">});</span>
+
+<span class="k">await</span> <span class="nx">transport</span><span class="p">.</span><span class="nx">start</span><span class="p">();</span>
+</code></pre></div></div>
+
+<h2 id="http-transport-transporthttp">HTTP Transport (<code class="language-plaintext highlighter-rouge">transport/http</code>)</h2>
+
+<h3 id="httptransport-class">HttpTransport Class</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nx">HttpTransport</span> <span class="p">{</span>
+  <span class="kd">constructor</span><span class="p">(</span><span class="nx">options</span><span class="p">:</span> <span class="nx">HttpTransportOptions</span><span class="p">);</span>
+  <span class="nx">start</span><span class="p">():</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span><span class="p">;</span>
+  <span class="nx">stop</span><span class="p">():</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span><span class="p">;</span>
+  <span class="nx">getPort</span><span class="p">():</span> <span class="kr">number</span><span class="p">;</span>
+  <span class="nx">getApp</span><span class="p">():</span> <span class="nx">Express</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">HttpTransportOptions</span> <span class="p">{</span>
+  <span class="nl">port</span><span class="p">?:</span> <span class="kr">number</span><span class="p">;</span>
+  <span class="nl">host</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">sseEnabled</span><span class="p">?:</span> <span class="nx">boolean</span><span class="p">;</span>
+  <span class="nl">sessionTimeout</span><span class="p">?:</span> <span class="kr">number</span><span class="p">;</span>
+  <span class="nl">authValidator</span><span class="p">?:</span> <span class="nx">OAuthValidator</span><span class="p">;</span>
+  <span class="nl">corsOrigins</span><span class="p">?:</span> <span class="kr">string</span><span class="p">[];</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="endpoints">Endpoints</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Endpoint</th>
+      <th>Method</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/mcp</code></td>
+      <td>POST</td>
+      <td>JSON-RPC requests</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/mcp/sse</code></td>
+      <td>GET</td>
+      <td>SSE event stream</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/health</code></td>
+      <td>GET</td>
+      <td>Health check</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/health/ready</code></td>
+      <td>GET</td>
+      <td>Readiness probe</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/health/live</code></td>
+      <td>GET</td>
+      <td>Liveness probe</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="usage-1">Usage</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">HttpTransport</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">transport</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">HttpTransport</span><span class="p">({</span>
+  <span class="na">port</span><span class="p">:</span> <span class="mi">3000</span><span class="p">,</span>
+  <span class="na">host</span><span class="p">:</span> <span class="dl">'</span><span class="s1">0.0.0.0</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">sseEnabled</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="k">await</span> <span class="nx">transport</span><span class="p">.</span><span class="nx">start</span><span class="p">();</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">`Server running on port </span><span class="p">${</span><span class="nx">transport</span><span class="p">.</span><span class="nx">getPort</span><span class="p">()}</span><span class="s2">`</span><span class="p">);</span>
+</code></pre></div></div>
+
+<h2 id="session-management-transportsession">Session Management (<code class="language-plaintext highlighter-rouge">transport/session</code>)</h2>
+
+<h3 id="sessionmanager-class">SessionManager Class</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nx">SessionManager</span> <span class="p">{</span>
+  <span class="kd">constructor</span><span class="p">(</span><span class="nx">options</span><span class="p">?:</span> <span class="nx">SessionManagerOptions</span><span class="p">);</span>
+  <span class="nx">createSession</span><span class="p">(</span><span class="nx">transportType</span><span class="p">:</span> <span class="kr">string</span><span class="p">):</span> <span class="nx">Session</span><span class="p">;</span>
+  <span class="nx">getSession</span><span class="p">(</span><span class="nx">sessionId</span><span class="p">:</span> <span class="kr">string</span><span class="p">):</span> <span class="nx">Session</span> <span class="o">|</span> <span class="kc">undefined</span><span class="p">;</span>
+  <span class="nx">destroySession</span><span class="p">(</span><span class="nx">sessionId</span><span class="p">:</span> <span class="kr">string</span><span class="p">):</span> <span class="nx">boolean</span><span class="p">;</span>
+  <span class="nx">getActiveSessions</span><span class="p">():</span> <span class="nx">Session</span><span class="p">[];</span>
+  <span class="nx">getSessionCount</span><span class="p">():</span> <span class="kr">number</span><span class="p">;</span>
+  <span class="nx">cleanup</span><span class="p">():</span> <span class="k">void</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">SessionManagerOptions</span> <span class="p">{</span>
+  <span class="nl">timeout</span><span class="p">?:</span> <span class="kr">number</span><span class="p">;</span>      <span class="c1">// Session timeout in ms</span>
+  <span class="nl">maxSessions</span><span class="p">?:</span> <span class="kr">number</span><span class="p">;</span>  <span class="c1">// Maximum concurrent sessions</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">Session</span> <span class="p">{</span>
+  <span class="nl">id</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">transportType</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">createdAt</span><span class="p">:</span> <span class="nb">Date</span><span class="p">;</span>
+  <span class="nl">lastActivity</span><span class="p">:</span> <span class="nb">Date</span><span class="p">;</span>
+  <span class="nl">state</span><span class="p">:</span> <span class="nx">SessionState</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kd">type</span> <span class="nx">SessionState</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">active</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">idle</span><span class="dl">'</span> <span class="o">|</span> <span class="dl">'</span><span class="s1">closed</span><span class="dl">'</span><span class="p">;</span>
+</code></pre></div></div>
+
+<h3 id="usage-2">Usage</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">SessionManager</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">sessions</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">SessionManager</span><span class="p">({</span>
+  <span class="na">timeout</span><span class="p">:</span> <span class="mi">3600000</span><span class="p">,</span>  <span class="c1">// 1 hour</span>
+  <span class="na">maxSessions</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="kd">const</span> <span class="nx">session</span> <span class="o">=</span> <span class="nx">sessions</span><span class="p">.</span><span class="nx">createSession</span><span class="p">(</span><span class="dl">'</span><span class="s1">http</span><span class="dl">'</span><span class="p">);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">`Created session: </span><span class="p">${</span><span class="nx">session</span><span class="p">.</span><span class="nx">id</span><span class="p">}</span><span class="s2">`</span><span class="p">);</span>
+
+<span class="c1">// Cleanup expired sessions</span>
+<span class="nx">sessions</span><span class="p">.</span><span class="nx">cleanup</span><span class="p">();</span>
+</code></pre></div></div>
+
+<h2 id="sse-transport-transportsse">SSE Transport (<code class="language-plaintext highlighter-rouge">transport/sse</code>)</h2>
+
+<h3 id="ssemanager-class">SSEManager Class</h3>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nx">SSEManager</span> <span class="p">{</span>
+  <span class="kd">constructor</span><span class="p">();</span>
+  <span class="nx">addClient</span><span class="p">(</span><span class="nx">sessionId</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">response</span><span class="p">:</span> <span class="nx">Response</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+  <span class="nx">removeClient</span><span class="p">(</span><span class="nx">sessionId</span><span class="p">:</span> <span class="kr">string</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+  <span class="nx">hasClient</span><span class="p">(</span><span class="nx">sessionId</span><span class="p">:</span> <span class="kr">string</span><span class="p">):</span> <span class="nx">boolean</span><span class="p">;</span>
+  <span class="nx">send</span><span class="p">(</span><span class="nx">sessionId</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">event</span><span class="p">:</span> <span class="nx">SSEEvent</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+  <span class="nx">broadcast</span><span class="p">(</span><span class="nx">event</span><span class="p">:</span> <span class="nx">SSEEvent</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+  <span class="nx">getClientCount</span><span class="p">():</span> <span class="kr">number</span><span class="p">;</span>
+  <span class="nx">replay</span><span class="p">(</span><span class="nx">sessionId</span><span class="p">:</span> <span class="kr">string</span><span class="p">,</span> <span class="nx">lastEventId</span><span class="p">:</span> <span class="kr">string</span><span class="p">):</span> <span class="k">void</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kr">interface</span> <span class="nx">SSEEvent</span> <span class="p">{</span>
+  <span class="nl">id</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">event</span><span class="p">?:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">data</span><span class="p">:</span> <span class="kr">string</span><span class="p">;</span>
+  <span class="nl">retry</span><span class="p">?:</span> <span class="kr">number</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="event-buffering">Event Buffering</h3>
+
+<p>SSE events are buffered for replay on reconnection:</p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">SSEManager</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">mcp-reference-server</span><span class="dl">'</span><span class="p">;</span>
+
+<span class="kd">const</span> <span class="nx">sse</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">SSEManager</span><span class="p">();</span>
+
+<span class="c1">// Send event with ID for replay</span>
+<span class="nx">sse</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">sessionId</span><span class="p">,</span> <span class="p">{</span>
+  <span class="na">id</span><span class="p">:</span> <span class="dl">'</span><span class="s1">42</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">event</span><span class="p">:</span> <span class="dl">'</span><span class="s1">message</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">data</span><span class="p">:</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">({</span> <span class="na">method</span><span class="p">:</span> <span class="dl">'</span><span class="s1">notifications/progress</span><span class="dl">'</span> <span class="p">})</span>
+<span class="p">});</span>
+
+<span class="c1">// Client reconnects with Last-Event-ID</span>
+<span class="nx">sse</span><span class="p">.</span><span class="nx">replay</span><span class="p">(</span><span class="nx">sessionId</span><span class="p">,</span> <span class="dl">'</span><span class="s1">40</span><span class="dl">'</span><span class="p">);</span>  <span class="c1">// Replays events 41, 42, ...</span>
+</code></pre></div></div>
+
+<h3 id="headers">Headers</h3>
+
+<p>SSE responses include:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+X-Accel-Buffering: no
+</code></pre></div></div>
+
+<h2 id="related">Related</h2>
+
+<ul>
+  <li><a href="../guides/transports">Transports Guide</a> - Transport concepts</li>
+  <li><a href="../guides/authentication">Authentication Guide</a> - OAuth for HTTP</li>
+</ul>
+
+
+<hr>
+
+<div class="nav-footer">
+  <p><strong>Navigation:</strong>
+    <a href="/">Home</a> |
+    <a href="/getting-started/installation">Getting Started</a> |
+    <a href="/guides/protocol">Guides</a> |
+    <a href="/api/protocol">API Reference</a> |
+    <a href="/examples/stdio-server">Examples</a> |
+    <a href="/reference/environment">Reference</a>
+  </p>
+</div>
+
+
+
+      </section>
+      <footer>
+        
+        <p>This project is maintained by <a href="https://github.com/chiefbuilder">chiefbuilder</a></p>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="/assets/js/scale.fix.js"></script>
+  </body>
+</html>

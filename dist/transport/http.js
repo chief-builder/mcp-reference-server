@@ -141,8 +141,21 @@ export class HttpTransport {
      * Setup Express middleware
      */
     setupMiddleware() {
-        // Parse JSON bodies
-        this.app.use(express.json());
+        // Parse JSON bodies with size limit to prevent DoS attacks
+        // Scoped to MCP endpoint only to avoid affecting other routes when user provides their own app
+        this.app.use(MCP_ENDPOINT, express.json({ limit: '100kb' }));
+        // Handle body-parser errors (e.g., payload too large)
+        this.app.use(MCP_ENDPOINT, (err, _req, res, next) => {
+            if (err.type === 'entity.too.large') {
+                res.status(413).json({
+                    jsonrpc: '2.0',
+                    error: { code: -32600, message: 'Payload too large' },
+                    id: null
+                });
+                return;
+            }
+            next(err);
+        });
         // CORS middleware
         this.app.use(MCP_ENDPOINT, this.corsMiddleware.bind(this));
     }
