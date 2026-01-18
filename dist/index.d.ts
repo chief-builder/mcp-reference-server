@@ -24,6 +24,5 @@ export * from './extensions/framework.js';
 export * from './extensions/oauth-m2m.js';
 export * from './observability/telemetry.js';
 export * from './observability/metrics.js';
-export * from './observability/tracing.js';
 export * from './observability/health.js';
 //# sourceMappingURL=index.d.ts.map

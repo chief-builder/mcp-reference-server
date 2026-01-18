@@ -35,6 +35,5 @@ export * from './extensions/oauth-m2m.js';
 // Observability
 export * from './observability/telemetry.js';
 export * from './observability/metrics.js';
-export * from './observability/tracing.js';
 export * from './observability/health.js';
 //# sourceMappingURL=index.js.map
