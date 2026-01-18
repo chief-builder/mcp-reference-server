@@ -7,7 +7,7 @@ export default defineConfig({
 
     // Test file patterns
     include: ['test/**/*.test.ts'],
-    exclude: ['**/node_modules/**', '**/dist/**'],
+    exclude: ['**/node_modules/**', '**/dist/**', 'test/e2e/**'],
 
     // Timeouts
     testTimeout: 10000,

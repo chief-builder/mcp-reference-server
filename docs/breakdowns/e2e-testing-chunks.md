@@ -19,9 +19,9 @@
 - [ ] `test/e2e/helpers/server-harness.ts` exports `ServerHarness` class
 - [ ] `ServerHarness.start()` spawns server process and returns `{ port, pid }`
 - [ ] `ServerHarness.stop()` sends SIGTERM and waits for process exit
-- [ ] `test/e2e/helpers/client-factory.ts` exports `createHttpClient()` and `createStdioClient()`
+- [ ] `test/e2e/helpers/client-factory.ts` exports `createHttpClient()` and `createStdioClientSpawned()`
 - [ ] `createHttpClient(port)` returns client that can call `initialize()`, `listTools()`, `callTool()`
-- [ ] `createStdioClient(process)` returns client that communicates via stdin/stdout
+- [ ] `createStdioClientSpawned(command, args, env)` spawns server and returns client for stdio transport
 - [ ] `test/e2e/helpers/assertions.ts` exports `waitForServerReady(port, timeout)`
 - [ ] Basic smoke test in `test/e2e/smoke.e2e.ts` passes: start server, connect client, list tools, stop server
 - [ ] `vitest.config.ts` updated with e2e project config (30s timeout, sequential execution)

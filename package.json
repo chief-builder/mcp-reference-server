@@ -35,6 +35,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "pretest:e2e": "npm run build",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "start": "node dist/cli.js",
     "dev": "tsx src/cli.ts",
     "client": "node dist/client/cli.js",
