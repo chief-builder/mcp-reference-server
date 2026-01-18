@@ -142,6 +142,72 @@ export class JwtSignatureError extends TokenError {
     }
 }
 // =============================================================================
+// Token Refresher (Promise-Lock Pattern)
+// =============================================================================
+/**
+ * Generic token refresher with promise-lock pattern.
+ *
+ * Prevents concurrent token refresh requests by returning the same promise
+ * for all callers while a refresh is in progress. This avoids duplicate
+ * network calls and race conditions when multiple parts of the application
+ * need a fresh token simultaneously.
+ *
+ * @typeParam T - The type of the refresh result
+ *
+ * @example
+ * ```typescript
+ * const refresher = new TokenRefresher<TokenResponse>();
+ *
+ * // Multiple concurrent calls will only trigger one actual refresh
+ * const [token1, token2] = await Promise.all([
+ *   refresher.refresh(() => fetchNewToken()),
+ *   refresher.refresh(() => fetchNewToken()),
+ * ]);
+ * // token1 === token2 (same promise result)
+ * ```
+ */
+export class TokenRefresher {
+    refreshPromise = null;
+    /**
+     * Execute a refresh operation with deduplication.
+     *
+     * If a refresh is already in progress, returns the existing promise.
+     * Otherwise, starts a new refresh and stores the promise for deduplication.
+     * The promise is cleared after completion (success or failure).
+     *
+     * @param refreshFn - Function that performs the actual refresh
+     * @returns The result of the refresh operation
+     */
+    async refresh(refreshFn) {
+        // Return existing promise if refresh already in progress
+        if (this.refreshPromise) {
+            return this.refreshPromise;
+        }
+        // Start new refresh and store promise
+        this.refreshPromise = refreshFn().finally(() => {
+            this.refreshPromise = null;
+        });
+        return this.refreshPromise;
+    }
+    /**
+     * Check if a refresh is currently in progress.
+     *
+     * @returns true if a refresh operation is pending
+     */
+    isRefreshing() {
+        return this.refreshPromise !== null;
+    }
+    /**
+     * Clear any pending refresh promise.
+     *
+     * This is useful when cleaning up resources or resetting state.
+     * Note: This does NOT cancel the underlying refresh operation.
+     */
+    clear() {
+        this.refreshPromise = null;
+    }
+}
+// =============================================================================
 // Token Manager
 // =============================================================================
 /**
@@ -159,7 +225,7 @@ export class TokenManager {
     config;
     oauthClient;
     tokens = new Map();
-    refreshPromises = new Map();
+    refreshers = new Map();
     constructor(options = {}) {
         this.config = TokenManagerConfigSchema.parse(options.config ?? {});
         this.oauthClient = options.oauthClient;
@@ -287,7 +353,10 @@ export class TokenManager {
      */
     clear() {
         this.tokens.clear();
-        this.refreshPromises.clear();
+        for (const refresher of this.refreshers.values()) {
+            refresher.clear();
+        }
+        this.refreshers.clear();
     }
     /**
      * Get all stored resource keys.
@@ -436,7 +505,7 @@ export class TokenManager {
         return resource ?? DEFAULT_RESOURCE_KEY;
     }
     /**
-     * Refresh a token if possible, with deduplication.
+     * Refresh a token if possible, with deduplication using TokenRefresher.
      */
     async refreshTokenIfPossible(key, token) {
         // Check if refresh is possible
@@ -446,20 +515,14 @@ export class TokenManager {
         if (!this.oauthClient) {
             return { success: false, error: 'No OAuth client configured for refresh' };
         }
-        // Check if a refresh is already in progress for this key
-        const existingPromise = this.refreshPromises.get(key);
-        if (existingPromise) {
-            return existingPromise;
+        // Get or create a refresher for this resource key
+        let refresher = this.refreshers.get(key);
+        if (!refresher) {
+            refresher = new TokenRefresher();
+            this.refreshers.set(key, refresher);
         }
-        // Start a new refresh
-        const refreshPromise = this.performRefresh(key, token);
-        this.refreshPromises.set(key, refreshPromise);
-        try {
-            return await refreshPromise;
-        }
-        finally {
-            this.refreshPromises.delete(key);
-        }
+        // Use the refresher's promise-lock pattern
+        return refresher.refresh(() => this.performRefresh(key, token));
     }
     /**
      * Perform the actual token refresh.

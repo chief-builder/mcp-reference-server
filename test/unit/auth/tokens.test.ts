@@ -26,6 +26,7 @@ import {
   refreshAccessToken,
   verifyJwt,
   clearJwksCache,
+  TokenRefresher,
 } from '../../../src/auth/tokens.js';
 import { OAuthClient, NormalizedTokenResponse } from '../../../src/auth/oauth.js';
 
@@ -1064,6 +1065,157 @@ describe('Standalone Functions', () => {
       await expect(
         refreshAccessToken('refresh-token', 'https://test.auth0.com/oauth/token')
       ).rejects.toThrow(TokenRefreshError);
+    });
+  });
+});
+
+// =============================================================================
+// TokenRefresher Tests
+// =============================================================================
+
+describe('TokenRefresher', () => {
+  describe('basic functionality', () => {
+    it('should execute refresh function and return result', async () => {
+      const refresher = new TokenRefresher<string>();
+      const result = await refresher.refresh(() => Promise.resolve('token-123'));
+      expect(result).toBe('token-123');
+    });
+
+    it('should not be refreshing initially', () => {
+      const refresher = new TokenRefresher<string>();
+      expect(refresher.isRefreshing()).toBe(false);
+    });
+
+    it('should not be refreshing after completion', async () => {
+      const refresher = new TokenRefresher<string>();
+      await refresher.refresh(() => Promise.resolve('token'));
+      expect(refresher.isRefreshing()).toBe(false);
+    });
+
+    it('should clear pending promise', () => {
+      const refresher = new TokenRefresher<string>();
+      refresher.clear();
+      expect(refresher.isRefreshing()).toBe(false);
+    });
+  });
+
+  describe('concurrent refresh deduplication', () => {
+    it('should return same promise for concurrent refresh calls', async () => {
+      const refresher = new TokenRefresher<string>();
+      let callCount = 0;
+      let resolveRefresh: (value: string) => void;
+
+      const delayedRefresh = () =>
+        new Promise<string>((resolve) => {
+          callCount++;
+          resolveRefresh = resolve;
+        });
+
+      // Start multiple concurrent refreshes
+      const promise1 = refresher.refresh(delayedRefresh);
+      const promise2 = refresher.refresh(delayedRefresh);
+      const promise3 = refresher.refresh(delayedRefresh);
+
+      // Should be refreshing now
+      expect(refresher.isRefreshing()).toBe(true);
+
+      // Resolve the single refresh
+      resolveRefresh!('shared-token');
+
+      const [result1, result2, result3] = await Promise.all([promise1, promise2, promise3]);
+
+      // All should return the same token
+      expect(result1).toBe('shared-token');
+      expect(result2).toBe('shared-token');
+      expect(result3).toBe('shared-token');
+
+      // Should only have called refresh once
+      expect(callCount).toBe(1);
+    });
+
+    it('should return same token instance for concurrent calls', async () => {
+      const refresher = new TokenRefresher<{ token: string }>();
+      let resolveRefresh: (value: { token: string }) => void;
+
+      const delayedRefresh = () =>
+        new Promise<{ token: string }>((resolve) => {
+          resolveRefresh = resolve;
+        });
+
+      const promise1 = refresher.refresh(delayedRefresh);
+      const promise2 = refresher.refresh(delayedRefresh);
+
+      const tokenObj = { token: 'unique-token' };
+      resolveRefresh!(tokenObj);
+
+      const [result1, result2] = await Promise.all([promise1, promise2]);
+
+      // Should be the exact same object instance
+      expect(result1).toBe(result2);
+      expect(result1).toBe(tokenObj);
+    });
+
+    it('should allow new refresh after previous completes', async () => {
+      const refresher = new TokenRefresher<string>();
+      let callCount = 0;
+
+      const result1 = await refresher.refresh(() => {
+        callCount++;
+        return Promise.resolve('token-1');
+      });
+
+      const result2 = await refresher.refresh(() => {
+        callCount++;
+        return Promise.resolve('token-2');
+      });
+
+      expect(result1).toBe('token-1');
+      expect(result2).toBe('token-2');
+      expect(callCount).toBe(2);
+    });
+  });
+
+  describe('error handling', () => {
+    it('should clear promise after error', async () => {
+      const refresher = new TokenRefresher<string>();
+
+      await expect(
+        refresher.refresh(() => Promise.reject(new Error('Failed')))
+      ).rejects.toThrow('Failed');
+
+      expect(refresher.isRefreshing()).toBe(false);
+    });
+
+    it('should propagate error to all concurrent callers', async () => {
+      const refresher = new TokenRefresher<string>();
+      let rejectRefresh: (error: Error) => void;
+
+      const delayedRefresh = () =>
+        new Promise<string>((_, reject) => {
+          rejectRefresh = reject;
+        });
+
+      const promise1 = refresher.refresh(delayedRefresh);
+      const promise2 = refresher.refresh(delayedRefresh);
+
+      const error = new Error('Refresh failed');
+      rejectRefresh!(error);
+
+      await expect(promise1).rejects.toThrow('Refresh failed');
+      await expect(promise2).rejects.toThrow('Refresh failed');
+    });
+
+    it('should allow retry after failure', async () => {
+      const refresher = new TokenRefresher<string>();
+
+      // First attempt fails
+      await expect(
+        refresher.refresh(() => Promise.reject(new Error('Failed')))
+      ).rejects.toThrow('Failed');
+
+      // Second attempt succeeds
+      const result = await refresher.refresh(() => Promise.resolve('recovered'));
+      expect(result).toBe('recovered');
     });
   });
 });

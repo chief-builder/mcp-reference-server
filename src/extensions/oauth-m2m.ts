@@ -18,6 +18,7 @@
 
 import { z } from 'zod';
 import type { Extension } from './framework.js';
+import { TokenRefresher } from '../auth/tokens.js';
 
 // =============================================================================
 // Constants
@@ -180,7 +181,7 @@ export class M2MAuthError extends Error {
 export class M2MClient {
   private readonly config: M2MClientConfig;
   private cachedToken: CachedToken | undefined;
-  private tokenPromise: Promise<string> | undefined;
+  private readonly tokenRefresher: TokenRefresher<string> = new TokenRefresher<string>();
 
   constructor(config: M2MClientConfig | OAuthM2MExtensionConfig) {
     this.config = M2MClientConfigSchema.parse(config);
@@ -217,25 +218,14 @@ export class M2MClient {
       return this.cachedToken!.accessToken;
     }
 
-    // If options are provided, always fetch a new token
+    // If options are provided, always fetch a new token (no caching)
     if (options) {
       const response = await this.requestToken(options);
-      // Don't cache tokens with custom options
       return response.accessToken;
     }
 
-    // Deduplicate concurrent requests
-    if (this.tokenPromise) {
-      return this.tokenPromise;
-    }
-
-    this.tokenPromise = this.fetchAndCacheToken();
-
-    try {
-      return await this.tokenPromise;
-    } finally {
-      this.tokenPromise = undefined;
-    }
+    // Use TokenRefresher to deduplicate concurrent requests
+    return this.tokenRefresher.refresh(() => this.fetchAndCacheToken());
   }
 
   /**
@@ -258,6 +248,7 @@ export class M2MClient {
    */
   clearCache(): void {
     this.cachedToken = undefined;
+    this.tokenRefresher.clear();
   }
 
   /**

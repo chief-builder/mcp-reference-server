@@ -152,7 +152,7 @@ export declare class M2MAuthError extends Error {
 export declare class M2MClient {
     private readonly config;
     private cachedToken;
-    private tokenPromise;
+    private readonly tokenRefresher;
     constructor(config: M2MClientConfig | OAuthM2MExtensionConfig);
     /**
      * Get the client configuration (without exposing the secret).

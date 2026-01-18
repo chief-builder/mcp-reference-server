@@ -237,6 +237,55 @@ export declare class JwtSignatureError extends TokenError {
     constructor(message?: string);
 }
 /**
+ * Generic token refresher with promise-lock pattern.
+ *
+ * Prevents concurrent token refresh requests by returning the same promise
+ * for all callers while a refresh is in progress. This avoids duplicate
+ * network calls and race conditions when multiple parts of the application
+ * need a fresh token simultaneously.
+ *
+ * @typeParam T - The type of the refresh result
+ *
+ * @example
+ * ```typescript
+ * const refresher = new TokenRefresher<TokenResponse>();
+ *
+ * // Multiple concurrent calls will only trigger one actual refresh
+ * const [token1, token2] = await Promise.all([
+ *   refresher.refresh(() => fetchNewToken()),
+ *   refresher.refresh(() => fetchNewToken()),
+ * ]);
+ * // token1 === token2 (same promise result)
+ * ```
+ */
+export declare class TokenRefresher<T> {
+    private refreshPromise;
+    /**
+     * Execute a refresh operation with deduplication.
+     *
+     * If a refresh is already in progress, returns the existing promise.
+     * Otherwise, starts a new refresh and stores the promise for deduplication.
+     * The promise is cleared after completion (success or failure).
+     *
+     * @param refreshFn - Function that performs the actual refresh
+     * @returns The result of the refresh operation
+     */
+    refresh(refreshFn: () => Promise<T>): Promise<T>;
+    /**
+     * Check if a refresh is currently in progress.
+     *
+     * @returns true if a refresh operation is pending
+     */
+    isRefreshing(): boolean;
+    /**
+     * Clear any pending refresh promise.
+     *
+     * This is useful when cleaning up resources or resetting state.
+     * Note: This does NOT cancel the underlying refresh operation.
+     */
+    clear(): void;
+}
+/**
  * Manages OAuth tokens with secure in-memory storage.
  *
  * Features:
@@ -251,7 +300,7 @@ export declare class TokenManager {
     private readonly config;
     private readonly oauthClient;
     private readonly tokens;
-    private refreshPromises;
+    private readonly refreshers;
     constructor(options?: {
         /** Token manager configuration */
         config?: Partial<TokenManagerConfig>;
@@ -364,7 +413,7 @@ export declare class TokenManager {
      */
     private getResourceKey;
     /**
-     * Refresh a token if possible, with deduplication.
+     * Refresh a token if possible, with deduplication using TokenRefresher.
      */
     private refreshTokenIfPossible;
     /**

@@ -16,6 +16,7 @@
  * - Secure credential handling
  */
 import { z } from 'zod';
+import { TokenRefresher } from '../auth/tokens.js';
 // =============================================================================
 // Constants
 // =============================================================================
@@ -99,7 +100,7 @@ export class M2MAuthError extends Error {
 export class M2MClient {
     config;
     cachedToken;
-    tokenPromise;
+    tokenRefresher = new TokenRefresher();
     constructor(config) {
         this.config = M2MClientConfigSchema.parse(config);
     }
@@ -127,23 +128,13 @@ export class M2MClient {
         if (!options && this.isTokenValid()) {
             return this.cachedToken.accessToken;
         }
-        // If options are provided, always fetch a new token
+        // If options are provided, always fetch a new token (no caching)
         if (options) {
             const response = await this.requestToken(options);
-            // Don't cache tokens with custom options
             return response.accessToken;
         }
-        // Deduplicate concurrent requests
-        if (this.tokenPromise) {
-            return this.tokenPromise;
-        }
-        this.tokenPromise = this.fetchAndCacheToken();
-        try {
-            return await this.tokenPromise;
-        }
-        finally {
-            this.tokenPromise = undefined;
-        }
+        // Use TokenRefresher to deduplicate concurrent requests
+        return this.tokenRefresher.refresh(() => this.fetchAndCacheToken());
     }
     /**
      * Check if the cached token is still valid.
@@ -163,6 +154,7 @@ export class M2MClient {
      */
     clearCache() {
         this.cachedToken = undefined;
+        this.tokenRefresher.clear();
     }
     /**
      * Get token expiration time (if cached).
