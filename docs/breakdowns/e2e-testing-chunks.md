@@ -45,7 +45,7 @@
 - [ ] `test/e2e/workflows/initialization.e2e.ts` exists with 5+ test cases
 - [ ] Test: HTTP client connects, initializes, receives `protocolVersion` and `capabilities`
 - [ ] Test: Stdio client connects, initializes, receives `protocolVersion` and `capabilities`
-- [ ] Test: Protocol version mismatch returns error with code `-32602`
+- [ ] Test: Protocol version mismatch returns error (code `-32600` INVALID_REQUEST)
 - [ ] Test: Client can call `tools/list` after successful initialization
 - [ ] Test: Multiple clients initialize concurrently without interference
 - [ ] All tests in `initialization.e2e.ts` pass
