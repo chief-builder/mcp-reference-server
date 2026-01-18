@@ -29,6 +29,7 @@
     ".env.example"
   ],
   "scripts": {
+    "prebuild": "npm run clean",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
