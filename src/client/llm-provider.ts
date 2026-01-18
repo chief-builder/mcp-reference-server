@@ -19,33 +19,6 @@ const DEFAULT_OPENROUTER_MODEL = 'google/gemini-2.0-flash-exp:free';
 const DEFAULT_ANTHROPIC_MODEL = 'claude-3-haiku-20240307';
 
 /**
- * Create an LLM provider based on configuration and available API keys
- */
-export function createLLMProvider(config: LLMConfig = {}): LanguageModelV1 {
-  const anthropicKey = config.apiKey || process.env.ANTHROPIC_API_KEY;
-  const openrouterKey = process.env.OPENROUTER_API_KEY;
-
-  // If explicitly requesting Anthropic
-  if (config.provider === 'anthropic') {
-    if (!anthropicKey) {
-      throw new Error('ANTHROPIC_API_KEY required for Anthropic provider');
-    }
-    return createAnthropicProvider(anthropicKey, config.model);
-  }
-
-  // If explicitly requesting OpenRouter or no preference
-  if (config.provider === 'openrouter' || !config.provider) {
-    const openrouter = createOpenRouter({
-      apiKey: openrouterKey || '', // Empty string for free tier
-    });
-    const model = config.model || DEFAULT_OPENROUTER_MODEL;
-    return openrouter(model);
-  }
-
-  throw new Error(`Unknown provider: ${config.provider}`);
-}
-
-/**
  * Create Anthropic provider (lazy import to avoid requiring the package)
  */
 async function createAnthropicProviderAsync(
@@ -64,25 +37,7 @@ async function createAnthropicProviderAsync(
 }
 
 /**
- * Synchronous wrapper - throws if Anthropic not available
- */
-function createAnthropicProvider(apiKey: string, model?: string): LanguageModelV1 {
-  // For synchronous usage, we need to check if the package is available
-  // This is a limitation - for proper async loading, use createLLMProviderAsync
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { createAnthropic } = require('@ai-sdk/anthropic');
-    const anthropic = createAnthropic({ apiKey });
-    return anthropic(model || DEFAULT_ANTHROPIC_MODEL);
-  } catch {
-    throw new Error(
-      'Anthropic provider not available. Install @ai-sdk/anthropic package.'
-    );
-  }
-}
-
-/**
- * Async version that properly handles dynamic imports
+ * Create an LLM provider based on configuration and available API keys
  */
 export async function createLLMProviderAsync(
   config: LLMConfig = {}

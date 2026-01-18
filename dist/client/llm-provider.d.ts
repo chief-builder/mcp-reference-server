@@ -14,10 +14,6 @@ export interface LLMConfig {
 /**
  * Create an LLM provider based on configuration and available API keys
  */
-export declare function createLLMProvider(config?: LLMConfig): LanguageModelV1;
-/**
- * Async version that properly handles dynamic imports
- */
 export declare function createLLMProviderAsync(config?: LLMConfig): Promise<LanguageModelV1>;
 /**
  * Get the default model ID for display

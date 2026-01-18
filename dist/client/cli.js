@@ -7,9 +7,21 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import * as readline from 'readline';
+import { parse } from 'shell-quote';
 import { MCPClient } from './mcp-client.js';
 import { createLLMProviderAsync, getDefaultModelId, getAvailableProviders } from './llm-provider.js';
 import { Agent } from './agent.js';
+/**
+ * Parse a shell command string into command and arguments.
+ * Handles quoted paths like "path with spaces" and 'single quoted'.
+ * @param command - The shell command string to parse
+ * @returns Array of parsed arguments (command as first element)
+ */
+export function parseCommand(command) {
+    const parsed = parse(command);
+    // Filter to only strings (shell-quote can return objects for operators like | > etc.)
+    return parsed.filter((arg) => typeof arg === 'string');
+}
 const program = new Command();
 program
     .name('mcp-client')
@@ -60,7 +72,7 @@ async function runChatMode(options) {
     try {
         // Connect to server
         if (server) {
-            const parts = server.split(' ');
+            const parts = parseCommand(server);
             const command = parts[0];
             const args = parts.slice(1);
             console.log(chalk.blue(`Connecting to server: ${server}`));
@@ -184,7 +196,7 @@ async function listTools(options) {
     const mcpClient = new MCPClient({ verbose: verbose ?? false });
     try {
         if (server) {
-            const parts = server.split(' ');
+            const parts = parseCommand(server);
             const command = parts[0];
             const args = parts.slice(1);
             await mcpClient.connectStdio({ command, args });
@@ -221,7 +233,7 @@ async function callTool(toolName, argsJson, options) {
     const mcpClient = new MCPClient({ verbose: verbose ?? false });
     try {
         if (server) {
-            const parts = server.split(' ');
+            const parts = parseCommand(server);
             const command = parts[0];
             const cmdArgs = parts.slice(1);
             await mcpClient.connectStdio({ command, args: cmdArgs });

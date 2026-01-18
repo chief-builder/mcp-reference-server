@@ -6,9 +6,11 @@
 // MCP Client
 export { MCPClient } from './mcp-client.js';
 // LLM Provider
-export { createLLMProvider, createLLMProviderAsync, getDefaultModelId, getAvailableProviders, } from './llm-provider.js';
+export { createLLMProviderAsync, getDefaultModelId, getAvailableProviders, } from './llm-provider.js';
 // Tools Adapter
 export { mcpToolToAiTool, convertMcpToolsToAiTools, jsonSchemaToZod, formatToolResult, } from './tools-adapter.js';
 // Agent
 export { Agent, runAgent } from './agent.js';
+// CLI utilities
+export { parseCommand } from './cli.js';
 //# sourceMappingURL=index.js.map

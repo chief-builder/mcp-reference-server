@@ -17,7 +17,6 @@ export type {
 
 // LLM Provider
 export {
-  createLLMProvider,
   createLLMProviderAsync,
   getDefaultModelId,
   getAvailableProviders,
@@ -35,3 +34,6 @@ export {
 // Agent
 export { Agent, runAgent } from './agent.js';
 export type { AgentOptions, AgentResult, AgentStep } from './agent.js';
+
+// CLI utilities
+export { parseCommand } from './cli.js';
