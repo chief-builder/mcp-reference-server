@@ -96,13 +96,14 @@
 
 **Done When**:
 - [ ] `validateState()` in `src/auth/oauth.ts` uses `timingSafeEqual` from `node:crypto`
+- [ ] `timingSafeEqual()` in `src/auth/pkce.ts` also updated to use `node:crypto` timingSafeEqual
 - [ ] Strings padded to same length before comparison (prevents length-based leakage)
 - [ ] Returns correct result for equal and unequal strings of any length
 - [ ] Validation passes (typecheck, lint, build)
 - [ ] Unit tests for: equal strings, unequal strings, different lengths
 - [ ] Discovered issues filed to beads
 
-**Scope**: `src/auth/oauth.ts`
+**Scope**: `src/auth/oauth.ts`, `src/auth/pkce.ts`
 **Size**: S
 **Risk**: None - uses built-in Node.js crypto
 **Beads**: #7rn
@@ -174,7 +175,10 @@
 
 **Done When**:
 - [ ] `shell-quote` and `@types/shell-quote` added to package.json
-- [ ] CLI server command parsing uses `parse()` from shell-quote
+- [ ] ALL 3 `server.split(' ')` calls replaced with shell-quote `parse()`:
+  - `runChatMode()` at line ~80
+  - `listTools()` at line ~221
+  - `callTool()` at line ~271
 - [ ] Quoted paths handled correctly: `"path with spaces"`, `'single quoted'`
 - [ ] `createLLMProvider()` (sync) removed from `src/client/llm-provider.ts`
 - [ ] `createAnthropicProvider()` (sync with require) removed
