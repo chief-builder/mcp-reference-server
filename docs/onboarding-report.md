@@ -44,6 +44,125 @@
 └── dist/                  # Compiled output
 ```
 
+## Architecture
+
+### High-Level Overview
+
+```mermaid
+graph TB
+    subgraph "Entry Points"
+        CLI[cli.ts]
+        ClientCLI[client/cli.ts]
+    end
+
+    subgraph "Core Server"
+        Config[Config]
+        Server[MCPServer]
+        Router[MessageRouter]
+        Lifecycle[LifecycleManager]
+    end
+
+    subgraph "Transports"
+        Stdio[StdioTransport]
+        HTTP[HttpTransport]
+        SSE[SSE Streaming]
+    end
+
+    subgraph "Handlers"
+        Tools[ToolExecutor]
+        Completions[CompletionHandler]
+        Logging[LoggingHandler]
+    end
+
+    subgraph "Tools"
+        Registry[ToolRegistry]
+        Calculator[Calculator]
+        DiceRoller[DiceRoller]
+        Fortune[FortuneTeller]
+    end
+
+    subgraph "Auth"
+        OAuth[OAuth 2.1]
+        PKCE[PKCE]
+        JWT[JWT Tokens]
+    end
+
+    CLI --> Config
+    CLI --> Server
+    Server --> Lifecycle
+    Server --> Stdio
+    Server --> HTTP
+    HTTP --> SSE
+    Stdio --> Router
+    HTTP --> Router
+    Router --> Lifecycle
+    Router --> Tools
+    Router --> Completions
+    Router --> Logging
+    Tools --> Registry
+    Registry --> Calculator
+    Registry --> DiceRoller
+    Registry --> Fortune
+    HTTP --> OAuth
+    OAuth --> PKCE
+    OAuth --> JWT
+```
+
+### Request Flow (MCP Protocol)
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Transport as Transport<br/>(stdio/HTTP)
+    participant Router as MessageRouter
+    participant Lifecycle as LifecycleManager
+    participant Handler as Handler<br/>(Tools/Completions)
+
+    Client->>Transport: JSON-RPC Request
+    Transport->>Router: handleMessage()
+    Router->>Lifecycle: checkPreInitialization()
+    alt Not Initialized
+        Lifecycle-->>Router: Error Response
+    else Initialized
+        Lifecycle-->>Router: OK
+        Router->>Handler: Process Request
+        Handler-->>Router: Result
+    end
+    Router-->>Transport: JSON-RPC Response
+    Transport-->>Client: Response
+```
+
+### OAuth Flow (Web UI)
+
+```mermaid
+sequenceDiagram
+    participant UI as React UI
+    participant API as /api/*
+    participant OAuth as OAuth Router
+    participant Auth as Auth Provider
+
+    UI->>OAuth: GET /.well-known/oauth-authorization-server
+    OAuth-->>UI: Discovery Document
+    UI->>Auth: Authorization Request (PKCE)
+    Auth-->>UI: Redirect with Code
+    UI->>OAuth: POST /oauth/token
+    OAuth->>OAuth: Validate PKCE
+    OAuth-->>UI: Access Token (JWT)
+    UI->>API: POST /api/chat (Bearer Token)
+    API->>API: Validate JWT
+    API-->>UI: SSE Response Stream
+```
+
+### Key Components
+
+- **MCPServer**: Main server orchestrator with graceful shutdown
+- **MessageRouter**: Routes JSON-RPC messages to appropriate handlers
+- **LifecycleManager**: Manages server state (uninitialized → running → shutdown)
+- **HttpTransport**: Express-based HTTP server with SSE support
+- **StdioTransport**: stdin/stdout transport for CLI integration
+- **ToolExecutor**: Executes registered tools with validation and timeout
+- **ToolRegistry**: Stores and manages tool definitions
+
 ## Build & Test
 
 | Command | Status | Notes |
@@ -162,6 +281,40 @@ Two binaries are exposed:
 - Uses **beads (bd)** for issue tracking (see AGENTS.md)
 - Specs in `docs/specs/`
 - Chunk breakdowns in `docs/breakdowns/`
+
+## UI Screenshots
+
+The project includes a React-based web UI (`packages/ui`).
+
+### Login Screen
+![Login Screen](screenshots/ui-login.png)
+- Centered card with "MCP Agent Chat" title
+- "Sign in to start chatting with the agent" subtitle
+- Single "Sign In" button (OAuth flow)
+
+### Main Chat Interface
+![Chat Interface](screenshots/ui-chat.png)
+- Header with "MCP Agent Chat" title and "Show Tools" toggle
+- Welcome message with quick-start suggestions:
+  - "Get started" - What can you help me with?
+  - "List tools" - What tools do you have available?
+  - "Run a command" - Shell command execution
+  - "File operations" - File management help
+- Message input at bottom with send button
+
+### Tools Panel
+![Tools Panel](screenshots/ui-tools.png)
+- Expandable "Available Tools" section
+- Lists registered MCP tools (Calculator, DiceRoller, FortuneTeller)
+- "Refresh" button to reload tool list
+- Error state shown when backend unavailable
+
+**To capture screenshots manually:**
+```bash
+cd packages/ui
+VITE_AUTH_REQUIRED=false npm run dev
+# Open http://localhost:5173 in browser
+```
 
 ## Observations
 

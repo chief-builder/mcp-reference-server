@@ -232,6 +232,104 @@ cat src/index.js 2>/dev/null | head -40
 grep -r "\.emit\|\.on\|EventEmitter" src/ --include="*.ts" --include="*.js" 2>/dev/null | head -20
 ```
 
+## Step 7b: Generate Architecture Diagrams
+
+Based on code analysis, create Mermaid diagrams for the report. Analyze imports, exports, and module relationships to build accurate diagrams.
+
+### High-Level Architecture
+```mermaid
+graph TB
+    subgraph "Entry Points"
+        CLI[CLI]
+        API[HTTP API]
+    end
+
+    subgraph "Core"
+        Server[Server]
+        Router[Router]
+    end
+
+    subgraph "Features"
+        Auth[Auth]
+        Tools[Tools]
+    end
+
+    CLI --> Server
+    API --> Server
+    Server --> Router
+    Router --> Auth
+    Router --> Tools
+```
+
+### Data Flow Diagram
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Transport
+    participant Server
+    participant Handler
+
+    Client->>Transport: Request
+    Transport->>Server: Parse & Route
+    Server->>Handler: Process
+    Handler-->>Server: Response
+    Server-->>Transport: Serialize
+    Transport-->>Client: Send
+```
+
+**Guidelines for diagrams:**
+- Analyze `src/index.ts` exports to identify main modules
+- Trace imports in entry points (cli.ts, server.ts) for dependencies
+- Look for patterns: routers, middleware, handlers, services
+- Keep diagrams focused - one per major concern (auth, data, API)
+- Use subgraphs to group related components
+
+## Step 7c: Capture UI Screenshots (if applicable)
+
+If the project has a web UI (React, Vue, Angular, etc.), attempt to capture screenshots.
+
+### Detect Web UI
+```bash
+# Check for frontend frameworks
+ls src/App.tsx src/App.jsx src/App.vue src/app/ packages/ui/ 2>/dev/null
+ls public/index.html index.html 2>/dev/null
+
+# Check for dev server scripts
+cat package.json | grep -E '"(dev|start|serve)"'
+```
+
+### Capture Screenshots
+
+**If MCP browser tools available (claude-in-chrome):**
+1. Start the dev server in background
+2. Use `mcp__claude-in-chrome__tabs_create_mcp` to create a tab
+3. Use `mcp__claude-in-chrome__navigate` to open localhost URL
+4. Use `mcp__claude-in-chrome__computer` with `action: "screenshot"` to capture
+5. Save screenshots to `docs/screenshots/`
+
+**If agent-browser CLI available:**
+```bash
+# Check if agent-browser is installed
+which agent-browser 2>/dev/null
+
+# Start dev server, capture screenshot, stop server
+npm run dev &
+DEV_PID=$!
+sleep 5
+agent-browser open http://localhost:3000
+agent-browser screenshot docs/screenshots/ui-main.png --full
+kill $DEV_PID
+```
+
+**If neither available:**
+- Document that UI exists but screenshots require manual capture
+- Note the dev server command and default URL
+
+### Screenshot Checklist
+- [ ] Main/home view
+- [ ] Key feature screens (if identifiable from routes)
+- [ ] Mobile responsive view (if applicable)
+
 ## Step 8: Generate Report
 
 Create `docs/onboarding-report.md`:
@@ -253,6 +351,27 @@ Create `docs/onboarding-report.md`:
 ```
 [tree output or manual structure listing]
 ```
+
+## Architecture
+
+### High-Level Overview
+
+```mermaid
+graph TB
+    [Generate based on actual code analysis]
+```
+
+### Data Flow
+
+```mermaid
+sequenceDiagram
+    [Generate based on actual request/response patterns]
+```
+
+### Key Components
+- **[Component 1]**: [purpose]
+- **[Component 2]**: [purpose]
+- **[Component 3]**: [purpose]
 
 ## Build & Test
 
@@ -298,6 +417,17 @@ Create `docs/onboarding-report.md`:
 - **Framework**: [Vitest / Jest / pytest / etc]
 - **Coverage**: [available/not available, percentage if known]
 - **Tiers**: Unit / Integration / E2E
+
+## UI Screenshots
+
+*If project has a web UI, include screenshots here.*
+
+| Screen | Description |
+|--------|-------------|
+| ![Main View](screenshots/ui-main.png) | Main application view |
+| ![Feature X](screenshots/ui-feature-x.png) | Description of feature |
+
+*Or note: "No web UI" / "Screenshots require manual capture - run `npm run dev` and open http://localhost:3000"*
 
 ## Observations
 
