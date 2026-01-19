@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
 import type { Message, MessageRole, ToolCallData } from '@/components/chat/types';
 import { useSSE } from './useSSE';
+import { post } from '@/lib/api';
 
 export interface UseChatOptions {
   initialMessages?: Message[];
@@ -172,13 +173,9 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     setIsLoading(false);
     setStreamingMessageId(null);
 
-    // Call server-side cancel endpoint
+    // Call server-side cancel endpoint (authenticated)
     try {
-      await fetch('/api/cancel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: sessionIdRef.current }),
-      });
+      await post('/api/cancel', { sessionId: sessionIdRef.current });
     } catch {
       // Ignore cancel errors - best effort
     }

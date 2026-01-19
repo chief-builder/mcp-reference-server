@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { streamingPost } from '@/lib/api';
 
 export interface SSETokenEvent {
   type: 'token';
@@ -45,6 +46,7 @@ export interface UseSSEOptions {
   onToolResult?: (name: string, result: unknown) => void;
   onDone?: (usage: SSEDoneEvent['usage']) => void;
   onError?: (code: string, message: string) => void;
+  onAuthError?: () => void;
 }
 
 export interface UseSSEReturn {
@@ -58,12 +60,14 @@ export interface UseSSEReturn {
  * Hook for handling SSE chat streaming
  *
  * Uses fetch with ReadableStream for SSE parsing since EventSource
- * doesn't support POST requests.
+ * doesn't support POST requests. Includes authentication support
+ * with automatic token refresh on 401.
  */
 export function useSSE(options: UseSSEOptions = {}): UseSSEReturn {
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
 
   const sendMessage = useCallback(
     async (message: string, sessionId?: string) => {
@@ -72,6 +76,10 @@ export function useSSE(options: UseSSEOptions = {}): UseSSEReturn {
         abortControllerRef.current.abort();
       }
 
+      // Track request ID to avoid race conditions with state updates
+      requestIdRef.current += 1;
+      const currentRequestId = requestIdRef.current;
+
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
@@ -79,14 +87,12 @@ export function useSSE(options: UseSSEOptions = {}): UseSSEReturn {
       setError(null);
 
       try {
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ message, sessionId }),
-          signal: controller.signal,
-        });
+        // Use the authenticated streaming POST helper
+        const response = await streamingPost(
+          '/api/chat',
+          { message, sessionId },
+          { signal: controller.signal }
+        );
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -149,11 +155,17 @@ export function useSSE(options: UseSSEOptions = {}): UseSSEReturn {
           return;
         }
         const message = err instanceof Error ? err.message : 'Unknown error';
-        setError(message);
-        options.onError?.('connection_error', message);
+        // Only update state if this is still the current request
+        if (requestIdRef.current === currentRequestId) {
+          setError(message);
+          options.onError?.('connection_error', message);
+        }
       } finally {
-        setIsStreaming(false);
-        abortControllerRef.current = null;
+        // Only update state if this is still the current request
+        if (requestIdRef.current === currentRequestId) {
+          setIsStreaming(false);
+          abortControllerRef.current = null;
+        }
       }
     },
     [options]
