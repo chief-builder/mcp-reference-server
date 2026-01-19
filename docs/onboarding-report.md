@@ -51,11 +51,11 @@
 | Install | ✅ | node_modules present |
 | Build | ✅ | tsc compiles cleanly |
 | Typecheck | ✅ | No type errors |
-| Unit Tests | ⚠️ | 1847 passed, 200 failed (port permission issues in sandbox) |
+| Unit Tests | ✅ | 2047 passed (45 test files) |
 | UI Build | ✅ | Vite builds successfully |
 | UI Lint | ⚠️ | 1 warning (fast-refresh export) |
 
-**Note**: Test failures are due to sandbox restrictions preventing port binding (EPERM errors). Tests pass normally outside sandbox.
+**Verified**: All 2047 tests pass in ~44 seconds. Earlier failures were due to sandbox port binding restrictions (EPERM errors on dynamic ports).
 
 ## Key Scripts
 
@@ -163,14 +163,15 @@ Two binaries are exposed:
 
 - Clean TypeScript with strict mode enabled
 - Well-organized modular architecture
-- Comprehensive test coverage structure
+- Comprehensive test coverage: 2047 tests across 45 files
 - OAuth 2.1 implementation is substantial (~25KB in auth/)
 - Extension framework for custom functionality
-- The 200 test failures are environment-specific (sandbox port restrictions)
+- Integration tests include real server lifecycle and SSE reconnection scenarios
+- Agent tests verify LLM tool execution with calculator, dice roller, and fortune teller
 
 ## Next Steps
 
 Suggested commands based on findings:
-- `/test-audit` - Deep dive into test coverage
+- `/test-audit` - Deep dive into test coverage gaps
 - `/health` - Code quality inspection
-- Run `npm test` outside sandbox to verify all tests pass
+- `npm run test:e2e` - Run E2E tests (OAuth flows, agent scenarios)
