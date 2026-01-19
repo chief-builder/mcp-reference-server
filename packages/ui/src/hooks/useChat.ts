@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
 import type { Message, MessageRole, ToolCallData } from '@/components/chat/types';
-import { useSSE } from './useSSE';
+import { useSSE, ConnectionStatus } from './useSSE';
 import { post } from '@/lib/api';
 
 export interface UseChatOptions {
@@ -14,10 +14,13 @@ export interface UseChatReturn {
   sendMessage: (content: string) => void;
   clearHistory: () => void;
   cancel: () => void;
+  retry: () => void;
   isLoading: boolean;
   isStreaming: boolean;
   error: string | null;
   streamingMessageId: string | null;
+  connectionStatus: ConnectionStatus;
+  retryCount: number;
 }
 
 export function useChat(options: UseChatOptions = {}): UseChatReturn {
@@ -133,11 +136,16 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     [handleToken, handleToolCall, handleToolResult, handleDone, handleError]
   );
 
-  const { sendMessage: sendSSEMessage, abort, isStreaming, error } = useSSE(sseOptions);
+  const { sendMessage: sendSSEMessage, abort, isStreaming, error, connectionStatus, retryCount } =
+    useSSE(sseOptions);
+  const lastMessageRef = useRef<string>('');
 
   const sendMessage = useCallback(
     (content: string) => {
       if (isLoading || isStreaming) return;
+
+      // Store for retry
+      lastMessageRef.current = content;
 
       // Add user message
       addMessage(content, 'user');
@@ -160,6 +168,42 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     },
     [isLoading, isStreaming, addMessage, sendSSEMessage]
   );
+
+  const retry = useCallback(() => {
+    if (lastMessageRef.current && !isLoading && !isStreaming) {
+      // Remove the last failed assistant message if empty
+      setMessages((prev) => {
+        const lastMsg = prev[prev.length - 1];
+        if (lastMsg?.role === 'assistant' && !lastMsg.content) {
+          return prev.slice(0, -1);
+        }
+        // Also remove empty user message if it exists
+        const secondLastMsg = prev[prev.length - 2];
+        if (secondLastMsg?.role === 'user') {
+          return prev.slice(0, -2);
+        }
+        return prev;
+      });
+
+      // Resend the last message
+      const content = lastMessageRef.current;
+      addMessage(content, 'user');
+
+      counterRef.current += 1;
+      const assistantMsgId = `msg-${Date.now()}-${counterRef.current}`;
+      const assistantMessage: Message = {
+        id: assistantMsgId,
+        role: 'assistant',
+        content: '',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+      setStreamingMessageId(assistantMsgId);
+      setIsLoading(true);
+
+      sendSSEMessage(content, sessionIdRef.current);
+    }
+  }, [isLoading, isStreaming, addMessage, sendSSEMessage]);
 
   const clearHistory = useCallback(() => {
     setMessages([]);
@@ -186,9 +230,12 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     sendMessage,
     clearHistory,
     cancel,
+    retry,
     isLoading,
     isStreaming,
     error,
     streamingMessageId,
+    connectionStatus,
+    retryCount,
   };
 }

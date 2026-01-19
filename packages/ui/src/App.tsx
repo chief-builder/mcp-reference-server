@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChatView } from '@/components/chat';
@@ -70,29 +70,162 @@ function LoadingScreen({ message }: { message: string }) {
 }
 
 /**
+ * Connection status indicator component
+ */
+function ConnectionStatusIndicator({
+  status,
+  retryCount,
+}: {
+  status: 'connected' | 'disconnected' | 'reconnecting';
+  retryCount: number;
+}) {
+  if (status === 'connected') return null;
+
+  return (
+    <div
+      className={`flex items-center gap-2 rounded px-3 py-1.5 text-sm ${
+        status === 'reconnecting'
+          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200'
+          : 'bg-destructive/10 text-destructive'
+      }`}
+    >
+      {status === 'reconnecting' && (
+        <div className="h-3 w-3 animate-spin rounded-full border-2 border-yellow-600 border-t-transparent" />
+      )}
+      {status === 'reconnecting'
+        ? `Connection lost. Retrying... (${retryCount}/3)`
+        : 'Disconnected'}
+    </div>
+  );
+}
+
+/**
+ * Rate limit countdown component
+ */
+function RateLimitCountdown({
+  seconds,
+  onComplete,
+}: {
+  seconds: number;
+  onComplete: () => void;
+}) {
+  const [remaining, setRemaining] = useState(seconds);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
+  useEffect(() => {
+    if (remaining <= 0) {
+      onCompleteRef.current();
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setRemaining((r) => r - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [remaining]);
+
+  return (
+    <div className="flex items-center gap-2 rounded bg-yellow-100 p-2 dark:bg-yellow-900/30">
+      <div className="h-3 w-3 animate-spin rounded-full border-2 border-yellow-600 border-t-transparent" />
+      <span className="flex-1 text-sm text-yellow-800 dark:text-yellow-200">
+        Rate limited. Retry in {remaining}s...
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Parse rate limit seconds from error message
+ */
+function parseRateLimitSeconds(error: string): number | null {
+  const match = error.match(/wait\s+(\d+)\s*seconds?/i);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+/**
+ * Error display with retry button
+ */
+function ErrorDisplay({
+  error,
+  onRetry,
+}: {
+  error: string;
+  onRetry?: () => void;
+}) {
+  const [showCountdown, setShowCountdown] = useState(false);
+  const rateLimitSeconds = parseRateLimitSeconds(error);
+  const isRateLimited = error.toLowerCase().includes('rate limit') && rateLimitSeconds;
+
+  useEffect(() => {
+    if (isRateLimited) {
+      setShowCountdown(true);
+    }
+  }, [isRateLimited]);
+
+  // Show countdown for rate limit errors
+  if (showCountdown && rateLimitSeconds && onRetry) {
+    return (
+      <RateLimitCountdown
+        seconds={rateLimitSeconds}
+        onComplete={() => {
+          setShowCountdown(false);
+          onRetry();
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 rounded bg-destructive/10 p-2">
+      <span className="flex-1 text-sm text-destructive">{error}</span>
+      {onRetry && (
+        <Button variant="outline" size="sm" onClick={onRetry}>
+          Retry
+        </Button>
+      )}
+    </div>
+  );
+}
+
+/**
  * Main chat interface with logout button
  */
 function ChatInterface({ onLogout }: { onLogout: () => void }) {
-  const { messages, sendMessage, cancel, isLoading, isStreaming, streamingMessageId, error } =
-    useChat();
+  const {
+    messages,
+    sendMessage,
+    cancel,
+    retry,
+    isLoading,
+    isStreaming,
+    streamingMessageId,
+    error,
+    connectionStatus,
+    retryCount,
+  } = useChat();
+
+  // Determine if we can retry (has an error and not currently loading)
+  const canRetry = error && !isLoading && !isStreaming;
 
   return (
-    <div className="h-screen bg-background p-4">
+    <div className="h-screen bg-background p-2 sm:p-4">
       <Card className="mx-auto flex h-full max-w-3xl flex-col">
-        <CardHeader className="shrink-0">
-          <div className="flex items-center justify-between">
-            <CardTitle>MCP Agent Chat</CardTitle>
-            {AUTH_REQUIRED && (
-              <Button variant="outline" size="sm" onClick={onLogout}>
-                Sign Out
-              </Button>
-            )}
-          </div>
-          {error && (
-            <div className="mt-2 rounded bg-destructive/10 p-2 text-sm text-destructive">
-              Error: {error}
+        <CardHeader className="shrink-0 px-3 py-2 sm:px-6 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="text-lg sm:text-xl">MCP Agent Chat</CardTitle>
+            <div className="flex items-center gap-2">
+              <ConnectionStatusIndicator status={connectionStatus} retryCount={retryCount} />
+              {AUTH_REQUIRED && (
+                <Button variant="outline" size="sm" onClick={onLogout}>
+                  <span className="hidden sm:inline">Sign Out</span>
+                  <span className="sm:hidden">Exit</span>
+                </Button>
+              )}
             </div>
-          )}
+          </div>
+          {error && <ErrorDisplay error={error} onRetry={canRetry ? retry : undefined} />}
         </CardHeader>
         <CardContent className="flex min-h-0 flex-1 flex-col p-0">
           <ChatView
@@ -100,6 +233,7 @@ function ChatInterface({ onLogout }: { onLogout: () => void }) {
             onSendMessage={sendMessage}
             onCancel={cancel}
             disabled={isLoading}
+            isLoading={isLoading}
             isStreaming={isStreaming}
             streamingMessageId={streamingMessageId}
             className="h-full"

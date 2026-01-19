@@ -32,6 +32,7 @@ export interface ApiError {
   message: string;
   status?: number;
   code?: string;
+  retryAfter?: number;
 }
 
 // =============================================================================
@@ -113,6 +114,27 @@ export async function apiRequest<T = unknown>(
       throw createApiError('Session expired. Please log in again.', 401, 'session_expired');
     }
 
+    // Handle 429 Rate Limit
+    if (response.status === 429) {
+      const retryAfterHeader = response.headers.get('Retry-After');
+      const retryAfter = retryAfterHeader ? parseInt(retryAfterHeader, 10) : 60;
+      throw createApiError(
+        `Rate limit exceeded. Please wait ${retryAfter} seconds.`,
+        429,
+        'rate_limit_exceeded',
+        retryAfter
+      );
+    }
+
+    // Handle 500 Internal Server Error
+    if (response.status >= 500) {
+      throw createApiError(
+        'Something went wrong. Please try again.',
+        response.status,
+        'server_error'
+      );
+    }
+
     // Parse response
     const contentType = response.headers.get('content-type');
     let data: T;
@@ -152,13 +174,21 @@ export async function apiRequest<T = unknown>(
 /**
  * Create an API error
  */
-function createApiError(message: string, status?: number, code?: string): ApiError {
+function createApiError(
+  message: string,
+  status?: number,
+  code?: string,
+  retryAfter?: number
+): ApiError {
   const error: ApiError = { message };
   if (status !== undefined) {
     error.status = status;
   }
   if (code !== undefined) {
     error.code = code;
+  }
+  if (retryAfter !== undefined) {
+    error.retryAfter = retryAfter;
   }
   return error;
 }
