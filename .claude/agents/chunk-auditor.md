@@ -1,6 +1,7 @@
 ---
 name: chunk-auditor
 description: Use this agent to audit a completed chunk against its acceptance criteria before closing. Verifies all "Done When" items are satisfied and discovered work is tracked in beads. This agent is spawned by /auto after each chunk implementation to validate completion.
+model: opus
 color: yellow
 ---
 

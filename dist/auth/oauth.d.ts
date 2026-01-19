@@ -28,15 +28,15 @@ export declare const OAuthConfigSchema: z.ZodObject<{
     clientId: string;
     issuer: string;
     scopes: string[];
-    clientSecret?: string | undefined;
     redirectUri?: string | undefined;
+    clientSecret?: string | undefined;
     authorizationEndpoint?: string | undefined;
     tokenEndpoint?: string | undefined;
 }, {
     clientId: string;
     issuer: string;
-    clientSecret?: string | undefined;
     redirectUri?: string | undefined;
+    clientSecret?: string | undefined;
     scopes?: string[] | undefined;
     authorizationEndpoint?: string | undefined;
     tokenEndpoint?: string | undefined;
@@ -63,20 +63,20 @@ export declare const AuthorizationRequestSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     clientId: string;
     redirectUri: string;
-    responseType: "code";
-    state: string;
     codeChallenge: string;
     codeChallengeMethod: "S256";
+    state: string;
+    responseType: "code";
     audience?: string | undefined;
     resource?: string[] | undefined;
     scope?: string | undefined;
 }, {
     clientId: string;
     redirectUri: string;
-    responseType: "code";
-    state: string;
     codeChallenge: string;
     codeChallengeMethod: "S256";
+    state: string;
+    responseType: "code";
     audience?: string | undefined;
     resource?: string[] | undefined;
     scope?: string | undefined;
@@ -100,16 +100,16 @@ export declare const TokenRequestSchema: z.ZodObject<{
     grantType: "authorization_code" | "refresh_token" | "client_credentials";
     code?: string | undefined;
     resource?: string | undefined;
-    redirectUri?: string | undefined;
     scope?: string | undefined;
+    redirectUri?: string | undefined;
     codeVerifier?: string | undefined;
     refreshToken?: string | undefined;
 }, {
     grantType: "authorization_code" | "refresh_token" | "client_credentials";
     code?: string | undefined;
     resource?: string | undefined;
-    redirectUri?: string | undefined;
     scope?: string | undefined;
+    redirectUri?: string | undefined;
     codeVerifier?: string | undefined;
     refreshToken?: string | undefined;
 }>;

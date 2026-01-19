@@ -15,6 +15,7 @@ import { PROTOCOL_VERSION } from '../protocol/lifecycle.js';
 import { SessionManager } from './session.js';
 import { SSEManager } from './sse.js';
 import { createApiRouter } from '../api/router.js';
+import { createOAuthRouter } from '../api/oauth-router.js';
 // =============================================================================
 // Constants
 // =============================================================================
@@ -164,6 +165,10 @@ export class HttpTransport {
      * Setup MCP routes
      */
     setupRoutes() {
+        // Mount OAuth router at /oauth if enabled
+        if (process.env.OAUTH_SERVER_ENABLED === 'true') {
+            this.app.use('/oauth', createOAuthRouter());
+        }
         // Mount API router at /api
         this.app.use('/api', createApiRouter());
         // Handle OPTIONS for CORS preflight
