@@ -6,10 +6,11 @@ import { AssistantMessage } from './AssistantMessage';
 
 export interface MessageListProps {
   messages: Message[];
+  streamingMessageId?: string | null;
   className?: string;
 }
 
-export function MessageList({ messages, className }: MessageListProps) {
+export function MessageList({ messages, streamingMessageId, className }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -22,7 +23,11 @@ export function MessageList({ messages, className }: MessageListProps) {
         message.role === 'user' ? (
           <UserMessage key={message.id} message={message} />
         ) : (
-          <AssistantMessage key={message.id} message={message} />
+          <AssistantMessage
+            key={message.id}
+            message={message}
+            isStreaming={message.id === streamingMessageId}
+          />
         )
       )}
       <div ref={bottomRef} />

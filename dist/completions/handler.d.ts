@@ -13,10 +13,10 @@ export declare const CompletionRefSchema: z.ZodObject<{
     type: z.ZodEnum<["ref/tool", "ref/prompt", "ref/resource"]>;
     name: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    type: "ref/tool" | "ref/prompt" | "ref/resource";
+    type: "ref/prompt" | "ref/resource" | "ref/tool";
     name: string;
 }, {
-    type: "ref/tool" | "ref/prompt" | "ref/resource";
+    type: "ref/prompt" | "ref/resource" | "ref/tool";
     name: string;
 }>;
 export type CompletionRef = z.infer<typeof CompletionRefSchema>;
@@ -38,10 +38,10 @@ export declare const CompletionParamsSchema: z.ZodObject<{
         type: z.ZodEnum<["ref/tool", "ref/prompt", "ref/resource"]>;
         name: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        type: "ref/tool" | "ref/prompt" | "ref/resource";
+        type: "ref/prompt" | "ref/resource" | "ref/tool";
         name: string;
     }, {
-        type: "ref/tool" | "ref/prompt" | "ref/resource";
+        type: "ref/prompt" | "ref/resource" | "ref/tool";
         name: string;
     }>;
     argument: z.ZodObject<{
@@ -56,7 +56,7 @@ export declare const CompletionParamsSchema: z.ZodObject<{
     }>;
 }, "strip", z.ZodTypeAny, {
     ref: {
-        type: "ref/tool" | "ref/prompt" | "ref/resource";
+        type: "ref/prompt" | "ref/resource" | "ref/tool";
         name: string;
     };
     argument: {
@@ -65,7 +65,7 @@ export declare const CompletionParamsSchema: z.ZodObject<{
     };
 }, {
     ref: {
-        type: "ref/tool" | "ref/prompt" | "ref/resource";
+        type: "ref/prompt" | "ref/resource" | "ref/tool";
         name: string;
     };
     argument: {

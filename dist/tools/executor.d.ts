@@ -78,16 +78,16 @@ export declare const ToolsCallParamsSchema: z.ZodObject<{
     }>>;
 }, "strip", z.ZodTypeAny, {
     name: string;
-    arguments?: Record<string, unknown> | undefined;
     _meta?: {
         progressToken?: string | number | undefined;
     } | undefined;
+    arguments?: Record<string, unknown> | undefined;
 }, {
     name: string;
-    arguments?: Record<string, unknown> | undefined;
     _meta?: {
         progressToken?: string | number | undefined;
     } | undefined;
+    arguments?: Record<string, unknown> | undefined;
 }>;
 export type ToolsCallParams = z.infer<typeof ToolsCallParamsSchema>;
 /**
