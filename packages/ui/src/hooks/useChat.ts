@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
-import type { Message, MessageRole } from '@/components/chat/types';
+import type { Message, MessageRole, ToolCallData } from '@/components/chat/types';
 import { useSSE } from './useSSE';
 
 export interface UseChatOptions {
@@ -12,6 +12,7 @@ export interface UseChatReturn {
   messages: Message[];
   sendMessage: (content: string) => void;
   clearHistory: () => void;
+  cancel: () => void;
   isLoading: boolean;
   isStreaming: boolean;
   error: string | null;
@@ -52,19 +53,26 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     [streamingMessageId]
   );
 
+  const toolCallCounterRef = useRef(0);
+
   const handleToolCall = useCallback(
     (name: string, args: Record<string, unknown>) => {
-      // Append tool call info to the streaming message, including args for debugging
+      // Add a new tool call entry to the streaming message
       if (streamingMessageId) {
-        const argsStr = Object.keys(args).length > 0
-          ? `\n\`\`\`json\n${JSON.stringify(args, null, 2)}\n\`\`\`\n`
-          : '';
+        toolCallCounterRef.current += 1;
+        const toolCallId = `tool-${Date.now()}-${toolCallCounterRef.current}`;
+        const newToolCall: ToolCallData = {
+          id: toolCallId,
+          name,
+          args,
+          status: 'pending',
+        };
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === streamingMessageId
               ? {
                   ...msg,
-                  content: msg.content + `\n\n*Calling tool: ${name}*${argsStr}`,
+                  toolCalls: [...(msg.toolCalls || []), newToolCall],
                 }
               : msg
           )
@@ -76,19 +84,22 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
 
   const handleToolResult = useCallback(
     (name: string, result: unknown) => {
-      // For now, append tool result info to the streaming message
+      // Update the first pending tool call with the matching name
       if (streamingMessageId) {
-        const resultStr =
-          typeof result === 'string' ? result : JSON.stringify(result, null, 2);
         setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === streamingMessageId
-              ? {
-                  ...msg,
-                  content: msg.content + `\n\n*Result from ${name}:*\n\`\`\`\n${resultStr}\n\`\`\`\n\n`,
-                }
-              : msg
-          )
+          prev.map((msg) => {
+            if (msg.id !== streamingMessageId) return msg;
+            const toolCalls = msg.toolCalls || [];
+            let updated = false;
+            const updatedToolCalls = toolCalls.map((tc) => {
+              if (!updated && tc.name === name && tc.status === 'pending') {
+                updated = true;
+                return { ...tc, result, status: 'complete' as const };
+              }
+              return tc;
+            });
+            return { ...msg, toolCalls: updatedToolCalls };
+          })
         );
       }
     },
@@ -121,7 +132,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     [handleToken, handleToolCall, handleToolResult, handleDone, handleError]
   );
 
-  const { sendMessage: sendSSEMessage, isStreaming, error } = useSSE(sseOptions);
+  const { sendMessage: sendSSEMessage, abort, isStreaming, error } = useSSE(sseOptions);
 
   const sendMessage = useCallback(
     (content: string) => {
@@ -155,10 +166,29 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     setIsLoading(false);
   }, []);
 
+  const cancel = useCallback(async () => {
+    // Abort the client-side fetch
+    abort();
+    setIsLoading(false);
+    setStreamingMessageId(null);
+
+    // Call server-side cancel endpoint
+    try {
+      await fetch('/api/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: sessionIdRef.current }),
+      });
+    } catch {
+      // Ignore cancel errors - best effort
+    }
+  }, [abort]);
+
   return {
     messages,
     sendMessage,
     clearHistory,
+    cancel,
     isLoading,
     isStreaming,
     error,

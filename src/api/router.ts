@@ -8,6 +8,7 @@
 import { Router, Request, Response } from 'express';
 import express from 'express';
 import { handleChat } from './chat-handler.js';
+import { handleCancel } from './cancel-handler.js';
 
 /**
  * Create and configure the API router
@@ -31,6 +32,12 @@ export function createApiRouter(): Router {
    * Chat endpoint with SSE streaming response
    */
   router.post('/chat', handleChat);
+
+  /**
+   * POST /api/cancel
+   * Cancel an in-progress chat generation
+   */
+  router.post('/cancel', handleCancel);
 
   return router;
 }

@@ -6,12 +6,22 @@ import { MessageInput } from './MessageInput';
 export interface ChatViewProps {
   messages: Message[];
   onSendMessage: (content: string) => void;
+  onCancel?: () => void;
   disabled?: boolean;
+  isStreaming?: boolean;
   streamingMessageId?: string | null;
   className?: string;
 }
 
-export function ChatView({ messages, onSendMessage, disabled = false, streamingMessageId, className }: ChatViewProps) {
+export function ChatView({
+  messages,
+  onSendMessage,
+  onCancel,
+  disabled = false,
+  isStreaming = false,
+  streamingMessageId,
+  className,
+}: ChatViewProps) {
   return (
     <div className={cn('flex h-full flex-col', className)}>
       <MessageList
@@ -20,7 +30,12 @@ export function ChatView({ messages, onSendMessage, disabled = false, streamingM
         className="flex-1 p-4"
       />
       <div className="border-t p-4">
-        <MessageInput onSend={onSendMessage} disabled={disabled} />
+        <MessageInput
+          onSend={onSendMessage}
+          onCancel={onCancel}
+          disabled={disabled}
+          isStreaming={isStreaming}
+        />
       </div>
     </div>
   );

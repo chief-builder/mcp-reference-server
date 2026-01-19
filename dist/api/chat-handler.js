@@ -8,6 +8,7 @@ import { streamText } from 'ai';
 import { MCPClient } from '../client/mcp-client.js';
 import { createLLMProviderAsync } from '../client/llm-provider.js';
 import { convertMcpToolsToAiTools } from '../client/tools-adapter.js';
+import { activeControllers } from './cancel-handler.js';
 const DEFAULT_SYSTEM_PROMPT = `You are a helpful AI assistant with access to tools.
 When the user asks a question or makes a request, use the available tools to help them.
 Always explain what you're doing and provide clear, helpful responses.`;
@@ -77,9 +78,13 @@ export async function handleChat(req, res) {
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
     res.flushHeaders();
+    // Create AbortController for this request
+    const currentSessionId = sessionId || `session-${Date.now()}`;
+    const abortController = new AbortController();
+    activeControllers.set(currentSessionId, abortController);
     try {
         const { client, model } = await ensureInitialized();
-        const session = getOrCreateSession(sessionId || `session-${Date.now()}`);
+        const session = getOrCreateSession(currentSessionId);
         // Add user message to history
         session.push({ role: 'user', content: message });
         // Get tools from MCP
@@ -93,6 +98,7 @@ export async function handleChat(req, res) {
             messages: session,
             tools,
             maxSteps: 10,
+            abortSignal: abortController.signal,
             onStepFinish: (event) => {
                 // Handle tool calls
                 if (event.toolCalls) {
@@ -138,12 +144,22 @@ export async function handleChat(req, res) {
         res.end();
     }
     catch (error) {
+        // Check if this was an abort
+        if (error instanceof Error && error.name === 'AbortError') {
+            // Don't send error for intentional cancellation
+            res.end();
+            return;
+        }
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         const errorCode = error instanceof Error && 'code' in error
             ? error.code
             : 'internal_error';
         sendSSE(res, 'error', { code: errorCode, message: errorMessage });
         res.end();
+    }
+    finally {
+        // Clean up the controller
+        activeControllers.delete(currentSessionId);
     }
 }
 /**

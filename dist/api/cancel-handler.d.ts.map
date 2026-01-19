@@ -1,0 +1,1 @@
+{"version":3,"file":"cancel-handler.d.ts","sourceRoot":"","sources":["../../src/api/cancel-handler.ts"],"names":[],"mappings":"AAAA;;;;GAIG;AAEH,OAAO,EAAE,OAAO,EAAE,QAAQ,EAAE,MAAM,SAAS,CAAC;AAI5C,eAAO,MAAM,iBAAiB,8BAAqC,CAAC;AAEpE,MAAM,WAAW,aAAa;IAC5B,SAAS,EAAE,MAAM,CAAC;CACnB;AAED;;GAEG;AACH,wBAAgB,YAAY,CAAC,GAAG,EAAE,OAAO,EAAE,GAAG,EAAE,QAAQ,GAAG,IAAI,CAiB9D"}

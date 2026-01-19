@@ -3,7 +3,7 @@ import { ChatView } from '@/components/chat';
 import { useChat } from '@/hooks/useChat';
 
 function App() {
-  const { messages, sendMessage, isLoading, isStreaming, streamingMessageId, error } = useChat();
+  const { messages, sendMessage, cancel, isLoading, isStreaming, streamingMessageId, error } = useChat();
 
   return (
     <div className="h-screen bg-background p-4">
@@ -20,7 +20,9 @@ function App() {
           <ChatView
             messages={messages}
             onSendMessage={sendMessage}
-            disabled={isLoading || isStreaming}
+            onCancel={cancel}
+            disabled={isLoading}
+            isStreaming={isStreaming}
             streamingMessageId={streamingMessageId}
             className="h-full"
           />

@@ -13,4 +13,7 @@ export type { UserMessageProps } from './UserMessage';
 export { AssistantMessage } from './AssistantMessage';
 export type { AssistantMessageProps } from './AssistantMessage';
 
-export type { Message, MessageRole } from './types';
+export { ToolCall } from './ToolCall';
+export type { ToolCallProps } from './ToolCall';
+
+export type { Message, MessageRole, ToolCallData } from './types';
