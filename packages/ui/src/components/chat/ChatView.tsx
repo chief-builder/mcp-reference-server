@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import type { Message } from './types';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
+import { ToolsPanel } from '@/components/tools';
 
 export interface ChatViewProps {
   messages: Message[];
@@ -24,6 +25,9 @@ export function ChatView({
 }: ChatViewProps) {
   return (
     <div className={cn('flex h-full flex-col', className)}>
+      <div className="border-b">
+        <ToolsPanel />
+      </div>
       <MessageList
         messages={messages}
         streamingMessageId={streamingMessageId}
