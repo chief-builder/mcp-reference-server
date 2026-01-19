@@ -177,7 +177,7 @@ npm run test:integration 2>&1 || true
 npm run test:e2e 2>&1 || true
 ```
 
-**Note**: E2E tests often have separate configs and may require environment setup (API keys, OAuth credentials). Run them separately and document any skipped tests.
+**Note**: E2E tests often have separate configs and may require environment setup (API keys, OAuth credentials). Check for required env vars in test files or `.env.example`. Run them separately and document any skipped tests.
 
 ### Python
 ```bash

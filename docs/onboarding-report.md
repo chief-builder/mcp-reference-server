@@ -51,20 +51,14 @@
 | Install | ✅ | node_modules present |
 | Build | ✅ | tsc compiles cleanly |
 | Typecheck | ✅ | No type errors |
-| Unit Tests | ✅ | 2047 passed (45 test files) |
-| E2E Tests | ⚠️ | 57 passed, 15 failed, 19 skipped |
+| Unit Tests | ✅ | 2047 passed (45 test files, ~44s) |
+| E2E Tests | ✅ | 91 passed (9 test files, ~83s) |
 | UI Build | ✅ | Vite builds successfully |
 | UI Lint | ⚠️ | 1 warning (fast-refresh export) |
 
-**Unit Tests**: All 2047 tests pass in ~44 seconds. Must run outside sandbox (port binding requires permissions).
-
-**E2E Tests**:
-- 57 passed (stdio transport, agent workflows, smoke tests)
-- 15 failed (server shutdown timing issues in test harness - SIGKILL timeouts)
-- 12 skipped (OAuth flow tests - require environment setup)
-- 7 skipped (HTTP transport variants)
-
-The E2E failures are test infrastructure issues (process exit timing), not functional bugs.
+**Test Requirements**:
+- Must run outside sandbox (port binding requires permissions)
+- E2E tests require `OPENROUTER_API_KEY` env var for agent tests
 
 ## Key Scripts
 
@@ -161,6 +155,7 @@ Two binaries are exposed:
   - `vitest.config.ts` - Unit/integration tests
   - `vitest.e2e.config.ts` - E2E tests
 - **Helpers**: `test/helpers/` and `test/e2e/helpers/`
+- **Environment**: `OPENROUTER_API_KEY` required for E2E agent tests
 
 ## Project Management
 
