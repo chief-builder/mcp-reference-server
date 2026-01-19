@@ -9,10 +9,10 @@
  * - Or set ANTHROPIC_API_KEY for Anthropic Claude
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { Agent, runAgent } from '../../src/client/agent.js';
 import { MCPClient } from '../../src/client/mcp-client.js';
-import { createLLMProviderAsync, getAvailableProviders } from '../../src/client/llm-provider.js';
+import { createLLMProviderAsync } from '../../src/client/llm-provider.js';
 import type { LanguageModelV1 } from 'ai';
 
 // =============================================================================
@@ -22,6 +22,7 @@ import type { LanguageModelV1 } from 'ai';
 const CURSOR_SECRET = 'e2e-test-cursor-secret-at-least-32-characters';
 const SERVER_COMMAND = 'node';
 const SERVER_ARGS = ['dist/cli.js'];
+
 
 // Check if any LLM provider is available (requires actual API key)
 const hasOpenRouterKey = !!process.env.OPENROUTER_API_KEY;
@@ -72,6 +73,13 @@ describeWithLLM('Agent E2E Tests with Real LLM', () => {
     });
   });
 
+  afterEach(async () => {
+    if (ctx.mcpClient) {
+      await ctx.mcpClient.disconnect();
+      ctx.mcpClient = null;
+    }
+  });
+
   afterAll(async () => {
     if (ctx.mcpClient) {
       await ctx.mcpClient.disconnect();
@@ -100,7 +108,7 @@ describeWithLLM('Agent E2E Tests with Real LLM', () => {
       const hasCorrectAnswer = result.text.includes('105') ||
         result.steps.some(s => s.content.includes('105'));
       expect(hasCorrectAnswer).toBe(true);
-    }, 30000); // 30s timeout for LLM call
+    }, 60000); // 60s timeout for LLM call (includes potential retries)
 
     it('should use dice roller tool when asked to roll dice', async () => {
       const result = await runAgent(
@@ -123,7 +131,7 @@ describeWithLLM('Agent E2E Tests with Real LLM', () => {
       // There should be a tool result
       const toolResults = result.steps.filter(s => s.type === 'tool_result');
       expect(toolResults.length).toBeGreaterThanOrEqual(1);
-    }, 30000);
+    }, 60000);
 
     it('should use fortune teller when asked for a fortune', async () => {
       const result = await runAgent(
@@ -142,7 +150,7 @@ describeWithLLM('Agent E2E Tests with Real LLM', () => {
       if (fortuneCall?.toolArgs) {
         expect(fortuneCall.toolArgs.category).toBe('career');
       }
-    }, 30000);
+    }, 60000);
   });
 
   describe('Multi-turn Conversations', () => {
@@ -162,15 +170,16 @@ describeWithLLM('Agent E2E Tests with Real LLM', () => {
       // Second turn: ask about the previous result
       const result2 = await agent.chat('Now add 28 to that previous result.');
 
+      // Note: This test may be flaky depending on LLM behavior
       // The agent should understand context and calculate 72 + 28 = 100
+      // Or it may use the tool again, or reason from memory
       const hasExpectedResult = result2.text.includes('100') ||
         result2.steps.some(s => s.content.includes('100'));
 
-      // Note: This test may be flaky depending on LLM behavior
-      // The important thing is that it makes another calculation
+      // Either got correct answer or made a tool call
       const calc2Steps = result2.steps.filter(s => s.type === 'tool_call');
-      expect(calc2Steps.length).toBeGreaterThanOrEqual(0); // May use tool or reason from memory
-    }, 60000); // 60s timeout for multiple LLM calls
+      expect(hasExpectedResult || calc2Steps.length > 0).toBe(true);
+    }, 120000); // 120s timeout for multiple LLM calls
   });
 
   describe('Error Handling', () => {
@@ -182,21 +191,26 @@ describeWithLLM('Agent E2E Tests with Real LLM', () => {
         { maxSteps: 5 }
       );
 
-      // The tool should have been called
+      // The LLM might either:
+      // 1. Call the tool and get an error back, OR
+      // 2. Recognize division by zero is invalid and explain without calling tool
+      // Both are valid behaviors - we just need to verify the response addresses the issue
+
       const toolCalls = result.steps.filter(s => s.type === 'tool_call');
-      expect(toolCalls.length).toBeGreaterThanOrEqual(1);
-
-      // The tool result should contain error
       const toolResults = result.steps.filter(s => s.type === 'tool_result');
-      const hasError = toolResults.some(s =>
-        s.content.toLowerCase().includes('error') ||
-        s.content.toLowerCase().includes('zero')
-      );
-      expect(hasError).toBe(true);
 
-      // The LLM should explain the error in its response
-      expect(result.text.toLowerCase()).toMatch(/zero|error|cannot|impossible/);
-    }, 30000);
+      if (toolCalls.length > 0) {
+        // If tool was called, verify error was returned
+        const hasError = toolResults.some(s =>
+          s.content.toLowerCase().includes('error') ||
+          s.content.toLowerCase().includes('zero')
+        );
+        expect(hasError).toBe(true);
+      }
+
+      // Either way, the LLM should explain the error/issue in its response
+      expect(result.text.toLowerCase()).toMatch(/zero|error|cannot|impossible|undefined|invalid|divide/);
+    }, 60000);
 
     it('should handle invalid tool arguments gracefully', async () => {
       const result = await runAgent(
@@ -216,7 +230,7 @@ describeWithLLM('Agent E2E Tests with Real LLM', () => {
         result.steps.some(s => s.content.toLowerCase().includes('invalid'));
 
       expect(hasErrorOrExplanation).toBe(true);
-    }, 30000);
+    }, 60000);
   });
 
   describe('Complex Workflows', () => {
@@ -237,18 +251,7 @@ describeWithLLM('Agent E2E Tests with Real LLM', () => {
 
       // The response should discuss the comparison
       expect(result.text.toLowerCase()).toMatch(/56|beat|roll|higher|lower|result/);
-    }, 45000);
+    }, 90000); // 90s timeout for multi-tool workflow
   });
 });
 
-// =============================================================================
-// Skip message for missing LLM
-// =============================================================================
-
-describe.skipIf(hasLLMProvider)('Agent E2E Tests - Skipped (No LLM Provider)', () => {
-  it('should be skipped because no LLM API key is set', () => {
-    console.log('\n⚠️  Agent E2E tests skipped: No LLM provider available.');
-    console.log('   Set OPENROUTER_API_KEY or ANTHROPIC_API_KEY to run these tests.\n');
-    expect(true).toBe(true);
-  });
-});

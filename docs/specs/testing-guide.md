@@ -132,6 +132,28 @@ npm run test:e2e
 - Malformed JSON-RPC (missing jsonrpc field) returns -32600
 - Malformed JSON-RPC (missing id for request) returns -32600
 
+#### 8. Agent E2E Tests (`test/e2e/agent.e2e.ts`) - 7 tests (requires LLM API key)
+
+These tests use a real LLM provider to test the full agent workflow. They are **skipped automatically** if no API key is set.
+
+```bash
+# Run with OpenRouter (free tier available)
+OPENROUTER_API_KEY=sk-or-... npm run test:e2e -- --run test/e2e/agent.e2e.ts
+
+# Run with Anthropic (recommended - better rate limits)
+ANTHROPIC_API_KEY=sk-ant-... npm run test:e2e -- --run test/e2e/agent.e2e.ts
+```
+
+| Test | Description | Timeout |
+|------|-------------|---------|
+| Calculator tool | Verifies LLM calls calculate tool for math | 60s |
+| Dice roller tool | Verifies LLM calls roll_dice for dice notation | 60s |
+| Fortune teller tool | Verifies LLM calls tell_fortune with params | 60s |
+| Multi-turn conversation | Tests conversation context across turns | 120s |
+| Division by zero | Tests error handling for tool errors | 60s |
+| Invalid tool args | Tests graceful handling of invalid args | 60s |
+| Multi-tool workflow | Tests sequential tool execution | 90s |
+
 ### Troubleshooting: Sandbox EPERM Errors
 
 If you see errors like:

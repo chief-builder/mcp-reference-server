@@ -24,6 +24,7 @@ import {
 import { PROTOCOL_VERSION } from '../protocol/lifecycle.js';
 import { SessionManager, Session } from './session.js';
 import { SSEManager } from './sse.js';
+import { createApiRouter } from '../api/router.js';
 
 // =============================================================================
 // Constants
@@ -262,6 +263,9 @@ export class HttpTransport {
    * Setup MCP routes
    */
   private setupRoutes(): void {
+    // Mount API router at /api
+    this.app.use('/api', createApiRouter());
+
     // Handle OPTIONS for CORS preflight
     this.app.options(MCP_ENDPOINT, this.handleOptions.bind(this));
 

@@ -15,7 +15,7 @@ export interface LLMConfig {
   apiKey?: string | undefined;
 }
 
-const DEFAULT_OPENROUTER_MODEL = 'google/gemini-2.0-flash-exp:free';
+const DEFAULT_OPENROUTER_MODEL = 'google/gemini-2.5-flash-lite';
 const DEFAULT_ANTHROPIC_MODEL = 'claude-3-haiku-20240307';
 
 /**

@@ -6,7 +6,7 @@
  * Optional: Anthropic Claude if ANTHROPIC_API_KEY is set
  */
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-const DEFAULT_OPENROUTER_MODEL = 'google/gemini-2.0-flash-exp:free';
+const DEFAULT_OPENROUTER_MODEL = 'google/gemini-2.5-flash-lite';
 const DEFAULT_ANTHROPIC_MODEL = 'claude-3-haiku-20240307';
 /**
  * Create Anthropic provider (lazy import to avoid requiring the package)
