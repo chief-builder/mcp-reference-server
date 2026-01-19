@@ -165,7 +165,9 @@ go build ./... 2>&1 || echo "Go build failed"
 
 ## Step 6: Run Tests
 
-Execute all available test tiers:
+Execute all available test tiers.
+
+**IMPORTANT**: Tests that bind to network ports or spawn subprocesses may fail in sandbox mode with `EPERM: operation not permitted` errors. If you see these errors, retry tests outside sandbox to get accurate results.
 
 ### Node.js
 ```bash
@@ -174,6 +176,8 @@ npm run test:unit 2>&1 || true
 npm run test:integration 2>&1 || true
 npm run test:e2e 2>&1 || true
 ```
+
+**Note**: E2E tests often have separate configs and may require environment setup (API keys, OAuth credentials). Run them separately and document any skipped tests.
 
 ### Python
 ```bash
@@ -257,9 +261,9 @@ Create `docs/onboarding-report.md`:
 | Install | ✅/❌ | [notes] |
 | Build | ✅/❌ | [notes] |
 | Typecheck | ✅/❌ | [notes] |
-| Unit Tests | X passed, Y failed | [notes] |
+| Unit Tests | X passed, Y failed | [notes - include sandbox retry if needed] |
 | Integration Tests | X passed, Y failed | [notes] |
-| E2E Tests | X passed, Y failed | [notes] |
+| E2E Tests | X passed, Y failed, Z skipped | [notes - document skipped tests and why] |
 
 ## Key Scripts
 
@@ -361,3 +365,6 @@ Suggested next steps:
 - Modifying project files (observation only)
 - Skipping tests because build failed (tests may still work)
 - Generating report without actually running commands
+- Reporting sandbox failures as real test failures (EPERM errors on ports = retry outside sandbox)
+- Skipping E2E tests (run separately and document results, including skipped tests)
+- Not distinguishing test tiers (unit vs integration vs e2e have different requirements)

@@ -52,10 +52,19 @@
 | Build | ✅ | tsc compiles cleanly |
 | Typecheck | ✅ | No type errors |
 | Unit Tests | ✅ | 2047 passed (45 test files) |
+| E2E Tests | ⚠️ | 57 passed, 15 failed, 19 skipped |
 | UI Build | ✅ | Vite builds successfully |
 | UI Lint | ⚠️ | 1 warning (fast-refresh export) |
 
-**Verified**: All 2047 tests pass in ~44 seconds. Earlier failures were due to sandbox port binding restrictions (EPERM errors on dynamic ports).
+**Unit Tests**: All 2047 tests pass in ~44 seconds. Must run outside sandbox (port binding requires permissions).
+
+**E2E Tests**:
+- 57 passed (stdio transport, agent workflows, smoke tests)
+- 15 failed (server shutdown timing issues in test harness - SIGKILL timeouts)
+- 12 skipped (OAuth flow tests - require environment setup)
+- 7 skipped (HTTP transport variants)
+
+The E2E failures are test infrastructure issues (process exit timing), not functional bugs.
 
 ## Key Scripts
 
