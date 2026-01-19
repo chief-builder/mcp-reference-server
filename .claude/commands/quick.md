@@ -19,12 +19,16 @@ Use AskUserQuestion:
 
 ## Step 2: Create Issue
 
+Generate a label: `{project}-{slug}`
+- **project**: Current repo/directory name (e.g., `my-ai-chat`)
+- **slug**: Derive from user's request - 2-4 words, kebab-case, descriptive (e.g., `delete-confirm`, `sidebar-padding`, `auth-bug`)
+
 ```bash
-bd create "$ARGUMENTS" --type=[bug|task] --priority=2
+bd create "$ARGUMENTS" --type=[bug|task] --priority=2 --label={project}-{slug}
 bd sync
 ```
 
-Confirm: "Tracking as #[id]. Let's do it."
+Confirm: "Tracking as #[id] with label `{label}`. Let's do it."
 
 ## Step 3: Understand
 
