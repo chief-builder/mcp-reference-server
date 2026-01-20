@@ -1,6 +1,6 @@
 ---
 description: Comprehensive project onboarding - analyze any codebase
-argument-hint: [directory or "." for current]
+argument-hint: [directory] [instructions-file]
 model: opus
 ---
 
@@ -10,16 +10,74 @@ Arguments: $ARGUMENTS
 
 Analyze a codebase to understand its structure, build system, test infrastructure, and capabilities.
 
-## Step 1: Determine Target
+## Step 1: Determine Target and Load Instructions
 
-**If $ARGUMENTS provided**: Use that as the project root.
-**If no arguments**: Use current directory.
+**Arguments format**: `[directory] [instructions-file]`
+- First argument: Project root directory (default: ".")
+- Second argument: Optional path to instructions file with custom commands
 
+**Example usages**:
+```
+/onboard                           # Current directory, no custom instructions
+/onboard .                         # Current directory, no custom instructions
+/onboard ./my-project              # Specific directory
+/onboard . ./ONBOARD.md            # Current directory with instructions file
+/onboard ./my-project ./setup.md   # Both directory and instructions
+```
+
+### Parse Arguments
 ```bash
-PROJECT_ROOT="${ARGUMENTS:-.}"
+# Split arguments - first is directory, second is instructions file
+PROJECT_ROOT=$(echo "$ARGUMENTS" | awk '{print $1}')
+INSTRUCTIONS_FILE=$(echo "$ARGUMENTS" | awk '{print $2}')
+
+# Default to current directory if not specified
+PROJECT_ROOT="${PROJECT_ROOT:-.}"
 cd "$PROJECT_ROOT" 2>/dev/null || PROJECT_ROOT="."
 pwd
+
+# Check if instructions file exists
+if [ -n "$INSTRUCTIONS_FILE" ] && [ -f "$INSTRUCTIONS_FILE" ]; then
+  echo "FOUND: Instructions file at $INSTRUCTIONS_FILE"
+fi
 ```
+
+### Load Custom Instructions
+
+If an instructions file is provided, read it to extract custom commands. The file should be markdown with code blocks for commands:
+
+```markdown
+# Example Instructions File
+
+## Start Server
+\`\`\`bash
+npm run dev
+\`\`\`
+
+## Start UI
+\`\`\`bash
+cd packages/ui && VITE_AUTH_REQUIRED=false npm run dev
+\`\`\`
+
+## Run Tests
+\`\`\`bash
+OPENROUTER_API_KEY=xxx npm run test:e2e
+\`\`\`
+
+## Environment Variables
+- OPENROUTER_API_KEY - required for E2E agent tests
+- AUTH_ENABLED=false - bypass auth in dev mode
+
+## Screenshots
+- Start UI with: `cd packages/ui && npm run dev`
+- Open: http://localhost:5173
+```
+
+**When instructions file is provided**:
+1. Read the file content
+2. Extract commands from code blocks under relevant headings
+3. Use those commands instead of defaults in Steps 5, 6, and 7c
+4. Include any noted environment variables in the report
 
 ## Step 2: Detect Project Type
 
@@ -132,7 +190,9 @@ ls src/index.* src/main.* src/app.* 2>/dev/null
 
 ## Step 5: Build the Project
 
-Attempt to build with graceful failure handling:
+Attempt to build with graceful failure handling.
+
+**If custom instructions file provided**: Use commands from `## Build` or `## Start Server` sections instead of defaults below.
 
 ### Node.js
 ```bash
@@ -166,6 +226,8 @@ go build ./... 2>&1 || echo "Go build failed"
 ## Step 6: Run Tests
 
 Execute all available test tiers.
+
+**If custom instructions file provided**: Use commands from `## Run Tests` or `## Tests` sections. Pay attention to any environment variables specified.
 
 **IMPORTANT**: Tests that bind to network ports or spawn subprocesses may fail in sandbox mode with `EPERM: operation not permitted` errors. If you see these errors, retry tests outside sandbox to get accurate results.
 
@@ -287,6 +349,8 @@ sequenceDiagram
 ## Step 7c: Capture UI Screenshots (if applicable)
 
 If the project has a web UI (React, Vue, Angular, etc.), attempt to capture screenshots.
+
+**If custom instructions file provided**: Use commands from `## Start UI` or `## Screenshots` sections for starting the dev server and the correct URL.
 
 ### Detect Web UI
 ```bash
