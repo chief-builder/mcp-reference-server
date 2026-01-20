@@ -28,3 +28,6 @@ npm-debug.log*
 # Temp files
 *.tmp
 /tmp/
+
+# Sensitive setup notes
+setup.md
