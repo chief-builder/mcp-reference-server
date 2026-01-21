@@ -14,6 +14,7 @@ import express from 'express';
 import { OAuthStore, getOAuthStore } from './oauth-store.js';
 import { JwtIssuer, getJwtIssuer } from './jwt-issuer.js';
 import { verifyCodeChallenge } from '../auth/pkce.js';
+import { renderLoginPage } from './login-page.js';
 
 // =============================================================================
 // Types
@@ -65,6 +66,10 @@ const DEFAULT_DEV_USER = 'dev-user';
 const DEFAULT_ACCESS_TOKEN_TTL = 3600; // 1 hour
 const DEFAULT_REFRESH_TOKEN_TTL = 86400; // 24 hours
 const DEFAULT_SCOPE = 'openid profile';
+
+// Default test credentials (can be overridden via environment)
+const DEFAULT_TEST_USER = 'demo';
+const DEFAULT_TEST_PASSWORD = 'demo';
 
 // =============================================================================
 // Error Helpers
@@ -135,17 +140,23 @@ export function createOAuthRouter(options: OAuthServerOptions = {}): Router {
   // Configuration
   const clientId = options.clientId ?? DEFAULT_CLIENT_ID;
   const allowedRedirectUri = options.allowedRedirectUri ?? DEFAULT_REDIRECT_URI;
-  const devUser = options.devUser ?? DEFAULT_DEV_USER;
+  // devUser from options is now only used as fallback for test credentials
+  const _devUser = options.devUser ?? DEFAULT_DEV_USER;
+  void _devUser; // Suppress unused warning - kept for backward compatibility
   const accessTokenTtl = options.accessTokenTtl ?? DEFAULT_ACCESS_TOKEN_TTL;
   const refreshTokenTtl = options.refreshTokenTtl ?? DEFAULT_REFRESH_TOKEN_TTL;
 
-  // =========================================================================
-  // GET /authorize - Authorization Endpoint
-  // =========================================================================
-  router.get('/authorize', (req: Request, res: Response) => {
-    const query = req.query as AuthorizeQueryParams;
+  // Test credentials from environment or defaults
+  const testUser = process.env.OAUTH_TEST_USER ?? DEFAULT_TEST_USER;
+  const testPassword = process.env.OAUTH_TEST_PASSWORD ?? DEFAULT_TEST_PASSWORD;
 
-    // Extract parameters
+  // =========================================================================
+  // Validate OAuth parameters (shared between GET /authorize and POST /login)
+  // =========================================================================
+  function validateOAuthParams(
+    query: AuthorizeQueryParams,
+    res: Response
+  ): { valid: false } | { valid: true; params: Required<Omit<AuthorizeQueryParams, 'scope'>> & { scope: string } } {
     const responseType = query.response_type;
     const reqClientId = query.client_id;
     const redirectUri = query.redirect_uri;
@@ -156,78 +167,120 @@ export function createOAuthRouter(options: OAuthServerOptions = {}): Router {
 
     // Validate response_type
     if (responseType !== 'code') {
-      // If we have a valid redirect URI, redirect with error
       if (redirectUri && redirectUri === allowedRedirectUri) {
-        authorizationError(
-          res,
-          redirectUri,
-          state,
-          'unsupported_response_type',
-          'Only response_type=code is supported'
-        );
-        return;
+        authorizationError(res, redirectUri, state, 'unsupported_response_type', 'Only response_type=code is supported');
+      } else {
+        oauthError(res, 400, 'unsupported_response_type', 'Only response_type=code is supported');
       }
-      oauthError(res, 400, 'unsupported_response_type', 'Only response_type=code is supported');
-      return;
+      return { valid: false };
     }
 
     // Validate client_id
     if (reqClientId !== clientId) {
       oauthError(res, 400, 'invalid_client', 'Unknown client_id');
-      return;
+      return { valid: false };
     }
 
     // Validate redirect_uri
     if (!redirectUri || redirectUri !== allowedRedirectUri) {
       oauthError(res, 400, 'invalid_request', 'Invalid or missing redirect_uri');
-      return;
+      return { valid: false };
     }
 
     // Validate state is present
     if (!state) {
       authorizationError(res, redirectUri, undefined, 'invalid_request', 'Missing state parameter');
-      return;
+      return { valid: false };
     }
 
     // Validate PKCE parameters
     if (!codeChallenge) {
-      authorizationError(
-        res,
-        redirectUri,
-        state,
-        'invalid_request',
-        'Missing code_challenge (PKCE required)'
-      );
-      return;
+      authorizationError(res, redirectUri, state, 'invalid_request', 'Missing code_challenge (PKCE required)');
+      return { valid: false };
     }
 
     // Only allow S256 method per MCP spec
     if (codeChallengeMethod !== 'S256') {
-      authorizationError(
-        res,
-        redirectUri,
+      authorizationError(res, redirectUri, state, 'invalid_request', "code_challenge_method must be 'S256'");
+      return { valid: false };
+    }
+
+    return {
+      valid: true,
+      params: {
+        response_type: responseType,
+        client_id: reqClientId,
+        redirect_uri: redirectUri,
+        scope,
         state,
-        'invalid_request',
-        "code_challenge_method must be 'S256'"
-      );
+        code_challenge: codeChallenge,
+        code_challenge_method: codeChallengeMethod,
+      },
+    };
+  }
+
+  // =========================================================================
+  // GET /authorize - Authorization Endpoint (shows login form)
+  // =========================================================================
+  router.get('/authorize', (req: Request, res: Response) => {
+    const query = req.query as AuthorizeQueryParams;
+
+    // Validate OAuth parameters first
+    const validation = validateOAuthParams(query, res);
+    if (!validation.valid) {
+      return; // Response already sent
+    }
+
+    // Show login form with original query string preserved
+    const queryString = new URLSearchParams(req.query as Record<string, string>).toString();
+    const html = renderLoginPage({ queryString });
+    res.type('html').send(html);
+  });
+
+  // =========================================================================
+  // POST /login - Handle login form submission
+  // =========================================================================
+  router.post('/login', (req: Request, res: Response) => {
+    const query = req.query as AuthorizeQueryParams;
+    const { username, password } = req.body as { username?: string; password?: string };
+
+    // Validate OAuth parameters
+    const validation = validateOAuthParams(query, res);
+    if (!validation.valid) {
+      return; // Response already sent
+    }
+
+    const { params } = validation;
+    const queryString = new URLSearchParams(req.query as Record<string, string>).toString();
+
+    // Validate credentials
+    if (!username || !password) {
+      const html = renderLoginPage({ queryString, error: 'Username and password are required' });
+      res.type('html').send(html);
       return;
     }
 
-    // For development: auto-approve and generate authorization code
+    if (username !== testUser || password !== testPassword) {
+      const html = renderLoginPage({ queryString, error: 'Invalid username or password' });
+      res.type('html').send(html);
+      return;
+    }
+
+    // Credentials valid - generate authorization code
     const code = store.storeAuthorizationCode({
-      clientId: reqClientId,
-      redirectUri,
-      codeChallenge,
+      clientId: params.client_id,
+      redirectUri: params.redirect_uri,
+      codeChallenge: params.code_challenge,
       codeChallengeMethod: 'S256',
-      subject: devUser,
-      scope,
-      state,
+      subject: username, // Use actual username as subject
+      scope: params.scope,
+      state: params.state,
     });
 
     // Redirect back with authorization code
-    const callbackUrl = new URL(redirectUri);
+    const callbackUrl = new URL(params.redirect_uri);
     callbackUrl.searchParams.set('code', code);
-    callbackUrl.searchParams.set('state', state);
+    callbackUrl.searchParams.set('state', params.state);
 
     res.redirect(302, callbackUrl.toString());
   });
