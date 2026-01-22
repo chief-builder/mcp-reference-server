@@ -4,7 +4,7 @@
  * Routes JSON-RPC messages to appropriate handlers based on method name.
  * Performs lifecycle validation before processing.
  */
-import { LifecycleError } from './protocol/lifecycle.js';
+import { LifecycleError, PROTOCOL_VERSION, InitializeParamsSchema } from './protocol/lifecycle.js';
 import { handleToolsList, handleToolsCall, ToolsListParamsSchema, ToolsCallParamsSchema, } from './tools/executor.js';
 import { CompletionParamsSchema } from './completions/handler.js';
 import { createSuccessResponse, createErrorResponse, createJsonRpcError, createMethodNotFoundResponse, JsonRpcErrorCodes, isRequest, } from './protocol/jsonrpc.js';
@@ -34,6 +34,93 @@ export class MessageRouter {
         // config is available in options if needed for future use
     }
     /**
+     * Check session lifecycle state before processing a message.
+     * Uses per-session state when available, otherwise falls back to global.
+     */
+    checkSessionLifecycle(message, sessionState) {
+        const state = sessionState ?? this.lifecycleManager.getState();
+        // Allow initialize request in uninitialized state
+        if (message.method === 'initialize' && state === 'uninitialized') {
+            return null;
+        }
+        // Allow initialized notification in initializing state
+        if (message.method === 'notifications/initialized' && state === 'initializing') {
+            return null;
+        }
+        // In ready state, allow all requests
+        if (state === 'ready') {
+            return null;
+        }
+        // In shutting_down state, reject everything
+        if (state === 'shutting_down') {
+            const id = 'id' in message ? message.id : null;
+            return createErrorResponse(id, createJsonRpcError(JsonRpcErrorCodes.INVALID_REQUEST, 'Server is shutting down'));
+        }
+        // Reject requests in uninitialized or initializing state
+        const id = 'id' in message ? message.id : null;
+        return createErrorResponse(id, createJsonRpcError(JsonRpcErrorCodes.INVALID_REQUEST, 'Server not initialized. Send initialize request first.'));
+    }
+    /**
+     * Handle initialize request with per-session state.
+     * Falls back to global lifecycle manager if no session is provided.
+     */
+    handleSessionInitialize(params, session) {
+        // If no session (e.g., stdio transport), use global lifecycle manager
+        if (!session) {
+            return this.lifecycleManager.handleInitialize(params);
+        }
+        // Validate params
+        const parseResult = InitializeParamsSchema.safeParse(params);
+        if (!parseResult.success) {
+            throw new LifecycleError(JsonRpcErrorCodes.INVALID_PARAMS, 'Invalid initialize params', parseResult.error.format());
+        }
+        const initParams = parseResult.data;
+        // Validate protocol version
+        if (initParams.protocolVersion !== PROTOCOL_VERSION) {
+            throw new LifecycleError(JsonRpcErrorCodes.INVALID_REQUEST, `Unsupported protocol version: ${initParams.protocolVersion}. Expected: ${PROTOCOL_VERSION}`, { supported: PROTOCOL_VERSION, received: initParams.protocolVersion });
+        }
+        // Store client info on session
+        session.clientInfo = initParams.clientInfo;
+        session.clientCapabilities = initParams.capabilities;
+        // Transition to initializing state
+        session.state = 'initializing';
+        // Build result using lifecycle manager's config
+        const serverConfig = {
+            name: 'mcp-reference-server',
+            version: '0.1.0',
+            description: 'MCP Reference Implementation Server',
+        };
+        const result = {
+            protocolVersion: PROTOCOL_VERSION,
+            capabilities: {
+                tools: { listChanged: true },
+                logging: {},
+                completions: {},
+            },
+            serverInfo: {
+                name: serverConfig.name,
+                version: serverConfig.version,
+                description: serverConfig.description,
+            },
+        };
+        return result;
+    }
+    /**
+     * Handle initialized notification with per-session state.
+     * Falls back to global lifecycle manager if no session is provided.
+     */
+    handleSessionInitialized(session) {
+        // If no session (e.g., stdio transport), use global lifecycle manager
+        if (!session) {
+            this.lifecycleManager.handleInitialized();
+            return;
+        }
+        if (session.state !== 'initializing') {
+            throw new LifecycleError(JsonRpcErrorCodes.INVALID_REQUEST, `Cannot receive initialized notification in ${session.state} state`);
+        }
+        session.state = 'ready';
+    }
+    /**
      * Route a JSON-RPC message to the appropriate handler.
      *
      * @param message - The JSON-RPC request or notification
@@ -41,8 +128,9 @@ export class MessageRouter {
      * @returns JSON-RPC response for requests, null for notifications
      */
     async handleMessage(message, context) {
-        // Step 1: Check lifecycle state
-        const lifecycleError = this.lifecycleManager.checkPreInitialization(message);
+        // Step 1: Check lifecycle state (per-session if available, otherwise global)
+        const sessionState = context?.session?.state;
+        const lifecycleError = this.checkSessionLifecycle(message, sessionState);
         if (lifecycleError) {
             return lifecycleError;
         }
@@ -68,7 +156,7 @@ export class MessageRouter {
     /**
      * Route a message to the appropriate handler based on method.
      */
-    async routeMessage(message, _context) {
+    async routeMessage(message, context) {
         const { method, params } = message;
         const id = isRequest(message) ? message.id : null;
         switch (method) {
@@ -76,11 +164,13 @@ export class MessageRouter {
             // Lifecycle Methods
             // =================================================================
             case 'initialize': {
-                const result = this.lifecycleManager.handleInitialize(params);
+                // Handle per-session initialization
+                const result = this.handleSessionInitialize(params, context?.session);
                 return createSuccessResponse(id, result);
             }
             case 'notifications/initialized': {
-                this.lifecycleManager.handleInitialized();
+                // Handle per-session initialized notification
+                this.handleSessionInitialized(context?.session);
                 return null; // Notification - no response
             }
             // =================================================================

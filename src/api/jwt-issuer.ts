@@ -96,6 +96,7 @@ export class JwtIssuer {
     expiresIn: number = this.defaultAccessTokenTtl
   ): Promise<string> {
     const now = Math.floor(Date.now() / 1000);
+    const jti = randomBytes(16).toString('base64url');
 
     const jwt = await new jose.SignJWT({
       scope: claims.scope,
@@ -106,6 +107,7 @@ export class JwtIssuer {
       .setAudience(claims.aud)
       .setIssuedAt(now)
       .setExpirationTime(now + expiresIn)
+      .setJti(jti)
       .sign(this.secret);
 
     return jwt;

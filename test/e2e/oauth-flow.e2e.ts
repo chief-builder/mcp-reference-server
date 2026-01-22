@@ -7,7 +7,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { ServerHarness } from './helpers/server-harness.js';
-import { getAvailablePort } from '../helpers/ports.js';
+import { getEphemeralPort } from './helpers/assertions.js';
 import { generateCodeVerifier, generateCodeChallenge } from '../../src/auth/pkce.js';
 import { randomBytes } from 'node:crypto';
 
@@ -17,7 +17,7 @@ describe('OAuth 2.1 Flow E2E', () => {
   let port: number;
 
   beforeAll(async () => {
-    port = await getAvailablePort();
+    port = getEphemeralPort();
     harness = new ServerHarness({
       port,
       transport: 'http',

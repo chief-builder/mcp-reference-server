@@ -93,6 +93,8 @@ export function useMCP(): UseMCPReturn {
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const requestIdRef = useRef(0);
+  // Use ref for session ID to avoid stale closure issues
+  const sessionIdRef = useRef<string | null>(null);
 
   /**
    * Make a JSON-RPC request to the MCP endpoint
@@ -120,9 +122,9 @@ export function useMCP(): UseMCPReturn {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      // Add session ID if we have one
-      if (sessionId) {
-        headers['mcp-session-id'] = sessionId;
+      // Add session ID if we have one (use ref for current value)
+      if (sessionIdRef.current) {
+        headers['mcp-session-id'] = sessionIdRef.current;
       }
 
       const response = await fetch(MCP_ENDPOINT, {
@@ -132,8 +134,10 @@ export function useMCP(): UseMCPReturn {
       });
 
       // Extract and store session ID from response header
+      // Update both ref (synchronous) and state (for re-renders)
       const newSessionId = response.headers.get('mcp-session-id');
-      if (newSessionId && newSessionId !== sessionId) {
+      if (newSessionId && newSessionId !== sessionIdRef.current) {
+        sessionIdRef.current = newSessionId;
         setSessionId(newSessionId);
       }
 
@@ -149,7 +153,7 @@ export function useMCP(): UseMCPReturn {
 
       return result.result as T;
     },
-    [sessionId]
+    [] // No deps needed - sessionIdRef is stable
   );
 
   /**
@@ -173,8 +177,9 @@ export function useMCP(): UseMCPReturn {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      if (sessionId) {
-        headers['mcp-session-id'] = sessionId;
+      // Use ref for current session ID value
+      if (sessionIdRef.current) {
+        headers['mcp-session-id'] = sessionIdRef.current;
       }
 
       // Fire and forget - notifications don't expect responses
@@ -184,7 +189,7 @@ export function useMCP(): UseMCPReturn {
         body: JSON.stringify(notification),
       });
     },
-    [sessionId]
+    [] // No deps needed - sessionIdRef is stable
   );
 
   /**

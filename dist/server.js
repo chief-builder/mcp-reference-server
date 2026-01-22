@@ -39,6 +39,7 @@
 export class ShutdownManager {
     timeoutMs;
     onShutdown;
+    exitProcess;
     cleanupHandlers = new Map();
     inFlightRequests = new Set();
     shuttingDown = false;
@@ -50,6 +51,7 @@ export class ShutdownManager {
     constructor(options) {
         this.timeoutMs = options.timeoutMs;
         this.onShutdown = options.onShutdown;
+        this.exitProcess = options.exitProcess ?? true;
         // Bind handlers for proper cleanup
         this.boundSigtermHandler = () => {
             void this.initiateShutdown('SIGTERM');
@@ -187,6 +189,11 @@ export class ShutdownManager {
             }
         }
         console.error('[ShutdownManager] Shutdown complete');
+        // Exit process after shutdown - necessary because some resources
+        // (like HTTP keep-alive connections) may keep the event loop alive
+        if (this.exitProcess) {
+            process.exit(0);
+        }
     }
     /**
      * Wait for all in-flight requests to complete, with timeout
@@ -262,6 +269,7 @@ export class MCPServer {
     httpTransport;
     telemetryManager;
     extensionRegistry;
+    exitProcess;
     shutdownManager = null;
     ready = false;
     started = false;
@@ -272,6 +280,7 @@ export class MCPServer {
         this.httpTransport = options?.httpTransport;
         this.telemetryManager = options?.telemetryManager;
         this.extensionRegistry = options?.extensionRegistry;
+        this.exitProcess = options?.exitProcess ?? true;
     }
     /**
      * Start the MCP server
@@ -286,6 +295,7 @@ export class MCPServer {
         const timeoutMs = this.config?.shutdownTimeoutMs ?? 30000;
         this.shutdownManager = new ShutdownManager({
             timeoutMs,
+            exitProcess: this.exitProcess,
             onShutdown: async () => {
                 // Final cleanup callback
             },
@@ -412,6 +422,7 @@ export class MCPServer {
 export function createShutdownManager(options) {
     const managerOptions = {
         timeoutMs: options?.timeoutMs ?? 30000,
+        exitProcess: options?.exitProcess ?? true,
     };
     if (options?.onShutdown) {
         managerOptions.onShutdown = options.onShutdown;

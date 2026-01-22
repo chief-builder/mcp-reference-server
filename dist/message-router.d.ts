@@ -39,6 +39,21 @@ export declare class MessageRouter {
     private readonly loggingHandler;
     constructor(options: MessageRouterOptions);
     /**
+     * Check session lifecycle state before processing a message.
+     * Uses per-session state when available, otherwise falls back to global.
+     */
+    private checkSessionLifecycle;
+    /**
+     * Handle initialize request with per-session state.
+     * Falls back to global lifecycle manager if no session is provided.
+     */
+    private handleSessionInitialize;
+    /**
+     * Handle initialized notification with per-session state.
+     * Falls back to global lifecycle manager if no session is provided.
+     */
+    private handleSessionInitialized;
+    /**
      * Route a JSON-RPC message to the appropriate handler.
      *
      * @param message - The JSON-RPC request or notification

@@ -22,6 +22,11 @@ export interface ShutdownManagerOptions {
      * Optional callback to run during shutdown
      */
     onShutdown?: () => Promise<void>;
+    /**
+     * Whether to call process.exit() after shutdown completes.
+     * Default: true (for CLI usage). Set to false for testing.
+     */
+    exitProcess?: boolean;
 }
 export interface CleanupHandler {
     name: string;
@@ -34,6 +39,11 @@ export interface MCPServerOptions {
     httpTransport?: HttpTransport;
     telemetryManager?: TelemetryManager;
     extensionRegistry?: ExtensionRegistry;
+    /**
+     * Whether to call process.exit() after shutdown completes.
+     * Default: true. Set to false for testing.
+     */
+    exitProcess?: boolean;
 }
 /**
  * Manages graceful shutdown of the MCP server
@@ -64,6 +74,7 @@ export interface MCPServerOptions {
 export declare class ShutdownManager {
     private readonly timeoutMs;
     private readonly onShutdown;
+    private readonly exitProcess;
     private readonly cleanupHandlers;
     private readonly inFlightRequests;
     private shuttingDown;
@@ -168,6 +179,7 @@ export declare class MCPServer {
     private readonly httpTransport;
     private readonly telemetryManager;
     private readonly extensionRegistry;
+    private readonly exitProcess;
     private shutdownManager;
     private ready;
     private started;

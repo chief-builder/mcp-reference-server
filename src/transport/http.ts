@@ -124,6 +124,7 @@ export class HttpTransport {
   private readonly statelessMode: boolean;
   private server: Server | null = null;
   private messageHandler: HttpMessageHandler | null = null;
+  private readonly activeSockets: Set<import('node:net').Socket> = new Set();
 
   constructor(options: HttpTransportOptions) {
     this.port = options.port;
@@ -200,6 +201,14 @@ export class HttpTransport {
         reject(new HttpTransportError(`Failed to start server: ${err.message}`, 500));
       });
 
+      // Track connections for graceful shutdown
+      this.server.on('connection', (socket) => {
+        this.activeSockets.add(socket);
+        socket.once('close', () => {
+          this.activeSockets.delete(socket);
+        });
+      });
+
       this.server.listen(this.port, this.host, () => {
         this.sessionManager.startCleanup();
         resolve();
@@ -217,6 +226,12 @@ export class HttpTransport {
     if (!this.server) {
       return;
     }
+
+    // Destroy all active connections to allow immediate shutdown
+    for (const socket of this.activeSockets) {
+      socket.destroy();
+    }
+    this.activeSockets.clear();
 
     return new Promise((resolve, reject) => {
       this.server!.close((err) => {

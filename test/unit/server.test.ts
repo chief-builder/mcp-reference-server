@@ -52,6 +52,7 @@ describe('ShutdownManager', () => {
   beforeEach(() => {
     shutdownManager = new ShutdownManager({
       timeoutMs: 1000,
+      exitProcess: false,
     });
   });
 
@@ -62,7 +63,7 @@ describe('ShutdownManager', () => {
 
   describe('constructor', () => {
     it('should create instance with required options', () => {
-      const manager = new ShutdownManager({ timeoutMs: 5000 });
+      const manager = new ShutdownManager({ timeoutMs: 5000, exitProcess: false });
       expect(manager).toBeInstanceOf(ShutdownManager);
       expect(manager.isShuttingDown()).toBe(false);
     });
@@ -71,6 +72,7 @@ describe('ShutdownManager', () => {
       const callback = vi.fn();
       const manager = new ShutdownManager({
         timeoutMs: 5000,
+        exitProcess: false,
         onShutdown: callback,
       });
       expect(manager).toBeInstanceOf(ShutdownManager);
@@ -220,6 +222,7 @@ describe('ShutdownManager', () => {
       const onShutdown = vi.fn().mockResolvedValue(undefined);
       const manager = new ShutdownManager({
         timeoutMs: 1000,
+        exitProcess: false,
         onShutdown,
       });
 
@@ -264,7 +267,7 @@ describe('ShutdownManager', () => {
     });
 
     it('should timeout if requests take too long', async () => {
-      const manager = new ShutdownManager({ timeoutMs: 100 });
+      const manager = new ShutdownManager({ timeoutMs: 100, exitProcess: false });
       manager.trackRequest('slow-request');
 
       const startTime = Date.now();
@@ -292,6 +295,7 @@ describe('ShutdownManager', () => {
       const onShutdown = vi.fn().mockRejectedValue(new Error('Callback error'));
       const manager = new ShutdownManager({
         timeoutMs: 1000,
+        exitProcess: false,
         onShutdown,
       });
 
@@ -347,12 +351,13 @@ describe('MCPServer', () => {
 
   describe('constructor', () => {
     it('should create instance with no options', () => {
-      server = new MCPServer();
+      server = new MCPServer({ exitProcess: false });
       expect(server).toBeInstanceOf(MCPServer);
     });
 
     it('should create instance with config', () => {
       server = new MCPServer({
+        exitProcess: false,
         config: {
           port: 3000,
           host: 'localhost',
@@ -373,7 +378,7 @@ describe('MCPServer', () => {
 
   describe('start()', () => {
     it('should start server and create shutdown manager', async () => {
-      server = new MCPServer();
+      server = new MCPServer({ exitProcess: false });
       await server.start();
 
       expect(server.isHealthy()).toBe(true);
@@ -382,7 +387,7 @@ describe('MCPServer', () => {
     });
 
     it('should be idempotent', async () => {
-      server = new MCPServer();
+      server = new MCPServer({ exitProcess: false });
       await server.start();
       await server.start();
       await server.start();
@@ -392,6 +397,7 @@ describe('MCPServer', () => {
 
     it('should use config shutdownTimeoutMs', async () => {
       server = new MCPServer({
+        exitProcess: false,
         config: {
           port: 3000,
           host: 'localhost',
@@ -415,7 +421,7 @@ describe('MCPServer', () => {
 
   describe('stop()', () => {
     it('should stop server gracefully', async () => {
-      server = new MCPServer();
+      server = new MCPServer({ exitProcess: false });
       await server.start();
       expect(server.isReady()).toBe(true);
 
@@ -424,27 +430,27 @@ describe('MCPServer', () => {
     });
 
     it('should be safe to call without starting', async () => {
-      server = new MCPServer();
+      server = new MCPServer({ exitProcess: false });
       await expect(server.stop()).resolves.toBeUndefined();
     });
   });
 
   describe('isReady() / isHealthy()', () => {
     it('should return false before start', () => {
-      server = new MCPServer();
+      server = new MCPServer({ exitProcess: false });
       expect(server.isReady()).toBe(false);
       expect(server.isHealthy()).toBe(false);
     });
 
     it('should return true after start', async () => {
-      server = new MCPServer();
+      server = new MCPServer({ exitProcess: false });
       await server.start();
       expect(server.isReady()).toBe(true);
       expect(server.isHealthy()).toBe(true);
     });
 
     it('should return false for ready during shutdown', async () => {
-      server = new MCPServer();
+      server = new MCPServer({ exitProcess: false });
       await server.start();
 
       // Initiate shutdown but don't wait
@@ -455,7 +461,7 @@ describe('MCPServer', () => {
     });
 
     it('should return true for healthy during shutdown', async () => {
-      server = new MCPServer();
+      server = new MCPServer({ exitProcess: false });
       await server.start();
 
       // Initiate shutdown but don't wait
@@ -469,7 +475,7 @@ describe('MCPServer', () => {
 
   describe('trackRequest() / completeRequest()', () => {
     it('should track requests via shutdown manager', async () => {
-      server = new MCPServer();
+      server = new MCPServer({ exitProcess: false });
       await server.start();
 
       server.trackRequest('req-1');
@@ -480,7 +486,7 @@ describe('MCPServer', () => {
     });
 
     it('should be safe before start', () => {
-      server = new MCPServer();
+      server = new MCPServer({ exitProcess: false });
       expect(() => server.trackRequest('req-1')).not.toThrow();
       expect(() => server.completeRequest('req-1')).not.toThrow();
     });
@@ -488,18 +494,18 @@ describe('MCPServer', () => {
 
   describe('isAcceptingRequests()', () => {
     it('should return false before start', () => {
-      server = new MCPServer();
+      server = new MCPServer({ exitProcess: false });
       expect(server.isAcceptingRequests()).toBe(false);
     });
 
     it('should return true after start', async () => {
-      server = new MCPServer();
+      server = new MCPServer({ exitProcess: false });
       await server.start();
       expect(server.isAcceptingRequests()).toBe(true);
     });
 
     it('should return false during shutdown', async () => {
-      server = new MCPServer();
+      server = new MCPServer({ exitProcess: false });
       await server.start();
 
       const stopPromise = server.stop();
@@ -526,7 +532,7 @@ describe('MCPServer', () => {
 
       expect(lifecycleManager.getState()).toBe('ready');
 
-      server = new MCPServer({ lifecycleManager });
+      server = new MCPServer({ lifecycleManager, exitProcess: false });
       await server.start();
       await server.stop();
 
@@ -541,20 +547,20 @@ describe('MCPServer', () => {
 
 describe('createShutdownManager()', () => {
   it('should create instance with defaults', () => {
-    const manager = createShutdownManager();
+    const manager = createShutdownManager({ exitProcess: false });
     expect(manager).toBeInstanceOf(ShutdownManager);
     manager.removeSignalHandlers();
   });
 
   it('should accept partial options', () => {
-    const manager = createShutdownManager({ timeoutMs: 5000 });
+    const manager = createShutdownManager({ timeoutMs: 5000, exitProcess: false });
     expect(manager).toBeInstanceOf(ShutdownManager);
     manager.removeSignalHandlers();
   });
 
   it('should accept onShutdown callback', async () => {
     const callback = vi.fn().mockResolvedValue(undefined);
-    const manager = createShutdownManager({ onShutdown: callback });
+    const manager = createShutdownManager({ onShutdown: callback, exitProcess: false });
 
     await manager.initiateShutdown('test');
     expect(callback).toHaveBeenCalled();

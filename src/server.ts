@@ -29,6 +29,12 @@ export interface ShutdownManagerOptions {
    * Optional callback to run during shutdown
    */
   onShutdown?: () => Promise<void>;
+
+  /**
+   * Whether to call process.exit() after shutdown completes.
+   * Default: true (for CLI usage). Set to false for testing.
+   */
+  exitProcess?: boolean;
 }
 
 export interface CleanupHandler {
@@ -43,6 +49,11 @@ export interface MCPServerOptions {
   httpTransport?: HttpTransport;
   telemetryManager?: TelemetryManager;
   extensionRegistry?: ExtensionRegistry;
+  /**
+   * Whether to call process.exit() after shutdown completes.
+   * Default: true. Set to false for testing.
+   */
+  exitProcess?: boolean;
 }
 
 // =============================================================================
@@ -78,6 +89,7 @@ export interface MCPServerOptions {
 export class ShutdownManager {
   private readonly timeoutMs: number;
   private readonly onShutdown: (() => Promise<void>) | undefined;
+  private readonly exitProcess: boolean;
   private readonly cleanupHandlers: Map<string, () => Promise<void>> = new Map();
   private readonly inFlightRequests: Set<string> = new Set();
 
@@ -92,6 +104,7 @@ export class ShutdownManager {
   constructor(options: ShutdownManagerOptions) {
     this.timeoutMs = options.timeoutMs;
     this.onShutdown = options.onShutdown;
+    this.exitProcess = options.exitProcess ?? true;
 
     // Bind handlers for proper cleanup
     this.boundSigtermHandler = () => {
@@ -249,6 +262,12 @@ export class ShutdownManager {
     }
 
     console.error('[ShutdownManager] Shutdown complete');
+
+    // Exit process after shutdown - necessary because some resources
+    // (like HTTP keep-alive connections) may keep the event loop alive
+    if (this.exitProcess) {
+      process.exit(0);
+    }
   }
 
   /**
@@ -335,6 +354,7 @@ export class MCPServer {
   private readonly httpTransport: HttpTransport | undefined;
   private readonly telemetryManager: TelemetryManager | undefined;
   private readonly extensionRegistry: ExtensionRegistry | undefined;
+  private readonly exitProcess: boolean;
 
   private shutdownManager: ShutdownManager | null = null;
   private ready: boolean = false;
@@ -347,6 +367,7 @@ export class MCPServer {
     this.httpTransport = options?.httpTransport;
     this.telemetryManager = options?.telemetryManager;
     this.extensionRegistry = options?.extensionRegistry;
+    this.exitProcess = options?.exitProcess ?? true;
   }
 
   /**
@@ -363,6 +384,7 @@ export class MCPServer {
     const timeoutMs = this.config?.shutdownTimeoutMs ?? 30000;
     this.shutdownManager = new ShutdownManager({
       timeoutMs,
+      exitProcess: this.exitProcess,
       onShutdown: async () => {
         // Final cleanup callback
       },
@@ -512,6 +534,7 @@ export class MCPServer {
 export function createShutdownManager(options?: Partial<ShutdownManagerOptions>): ShutdownManager {
   const managerOptions: ShutdownManagerOptions = {
     timeoutMs: options?.timeoutMs ?? 30000,
+    exitProcess: options?.exitProcess ?? true,
   };
   if (options?.onShutdown) {
     managerOptions.onShutdown = options.onShutdown;

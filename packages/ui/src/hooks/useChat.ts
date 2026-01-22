@@ -29,6 +29,8 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const counterRef = useRef(0);
   const sessionIdRef = useRef(options.sessionId || `session-${Date.now()}`);
+  // Use ref to track streaming message ID to avoid stale closure issues
+  const streamingMessageIdRef = useRef<string | null>(null);
 
   const addMessage = useCallback((content: string, role: MessageRole): Message => {
     counterRef.current += 1;
@@ -44,17 +46,18 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
 
   const handleToken = useCallback(
     (content: string) => {
-      if (streamingMessageId) {
+      const msgId = streamingMessageIdRef.current;
+      if (msgId) {
         setMessages((prev) =>
           prev.map((msg) =>
-            msg.id === streamingMessageId
+            msg.id === msgId
               ? { ...msg, content: msg.content + content }
               : msg
           )
         );
       }
     },
-    [streamingMessageId]
+    [] // No deps - uses ref which is stable
   );
 
   const toolCallCounterRef = useRef(0);
@@ -62,7 +65,8 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const handleToolCall = useCallback(
     (name: string, args: Record<string, unknown>) => {
       // Add a new tool call entry to the streaming message
-      if (streamingMessageId) {
+      const msgId = streamingMessageIdRef.current;
+      if (msgId) {
         toolCallCounterRef.current += 1;
         const toolCallId = `tool-${Date.now()}-${toolCallCounterRef.current}`;
         const newToolCall: ToolCallData = {
@@ -73,7 +77,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         };
         setMessages((prev) =>
           prev.map((msg) =>
-            msg.id === streamingMessageId
+            msg.id === msgId
               ? {
                   ...msg,
                   toolCalls: [...(msg.toolCalls || []), newToolCall],
@@ -83,16 +87,17 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         );
       }
     },
-    [streamingMessageId]
+    [] // No deps - uses ref which is stable
   );
 
   const handleToolResult = useCallback(
     (name: string, result: unknown) => {
       // Update the first pending tool call with the matching name
-      if (streamingMessageId) {
+      const msgId = streamingMessageIdRef.current;
+      if (msgId) {
         setMessages((prev) =>
           prev.map((msg) => {
-            if (msg.id !== streamingMessageId) return msg;
+            if (msg.id !== msgId) return msg;
             const toolCalls = msg.toolCalls || [];
             let updated = false;
             const updatedToolCalls = toolCalls.map((tc) => {
@@ -107,18 +112,20 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         );
       }
     },
-    [streamingMessageId]
+    [] // No deps - uses ref which is stable
   );
 
   const handleDone = useCallback(() => {
     setIsLoading(false);
     setStreamingMessageId(null);
+    streamingMessageIdRef.current = null;
   }, []);
 
   const handleError = useCallback(
     (_code: string, message: string) => {
       setIsLoading(false);
       setStreamingMessageId(null);
+      streamingMessageIdRef.current = null;
       options.onError?.(message);
     },
     [options]
@@ -160,6 +167,8 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
+      // Set ref first (synchronous) so callbacks have the correct ID
+      streamingMessageIdRef.current = assistantMsgId;
       setStreamingMessageId(assistantMsgId);
       setIsLoading(true);
 
@@ -198,6 +207,8 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
+      // Set ref first (synchronous) so callbacks have the correct ID
+      streamingMessageIdRef.current = assistantMsgId;
       setStreamingMessageId(assistantMsgId);
       setIsLoading(true);
 
@@ -208,6 +219,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const clearHistory = useCallback(() => {
     setMessages([]);
     setStreamingMessageId(null);
+    streamingMessageIdRef.current = null;
     setIsLoading(false);
   }, []);
 
@@ -216,6 +228,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     abort();
     setIsLoading(false);
     setStreamingMessageId(null);
+    streamingMessageIdRef.current = null;
 
     // Call server-side cancel endpoint (authenticated)
     try {

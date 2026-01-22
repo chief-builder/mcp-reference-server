@@ -278,7 +278,7 @@ describe('Built-in Checks', () => {
 
   describe('createShutdownCheck', () => {
     it('should return pass status when not shutting down', () => {
-      const shutdownManager = new ShutdownManager({ timeoutMs: 1000 });
+      const shutdownManager = new ShutdownManager({ timeoutMs: 1000, exitProcess: false });
       const check = createShutdownCheck(shutdownManager);
       const result = check() as CheckResult;
       expect(result.status).toBe('pass');
@@ -286,7 +286,7 @@ describe('Built-in Checks', () => {
     });
 
     it('should return fail status when shutting down', async () => {
-      const shutdownManager = new ShutdownManager({ timeoutMs: 100 });
+      const shutdownManager = new ShutdownManager({ timeoutMs: 100, exitProcess: false });
 
       // Start shutdown
       const shutdownPromise = shutdownManager.initiateShutdown('test');
@@ -314,7 +314,7 @@ describe('Built-in Checks', () => {
 
     it('should register shutdown check when shutdownManager provided', async () => {
       const healthChecker = new HealthChecker();
-      const shutdownManager = new ShutdownManager({ timeoutMs: 1000 });
+      const shutdownManager = new ShutdownManager({ timeoutMs: 1000, exitProcess: false });
       registerBuiltInChecks(healthChecker, { shutdownManager });
 
       const result = await healthChecker.runChecks();
@@ -477,7 +477,7 @@ describe('healthMiddleware', () => {
 
 describe('Health Check Integration', () => {
   it('should work with ShutdownManager integration', async () => {
-    const shutdownManager = new ShutdownManager({ timeoutMs: 1000 });
+    const shutdownManager = new ShutdownManager({ timeoutMs: 1000, exitProcess: false });
     const healthChecker = new HealthChecker({ version: '1.0.0' });
 
     registerBuiltInChecks(healthChecker, { shutdownManager });

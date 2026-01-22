@@ -10,7 +10,7 @@ import { createLLMProviderAsync } from '../client/llm-provider.js';
 import { convertMcpToolsToAiTools } from '../client/tools-adapter.js';
 import { activeControllers } from './cancel-handler.js';
 const DEFAULT_SYSTEM_PROMPT = `You are a helpful AI assistant with access to tools.
-When the user asks a question or makes a request, use the available tools to help them.
+Use tools when appropriate, but you can also answer general knowledge questions directly.
 Always explain what you're doing and provide clear, helpful responses.`;
 // Session storage for conversation history
 const sessions = new Map();
@@ -83,16 +83,21 @@ export async function handleChat(req, res) {
     const abortController = new AbortController();
     activeControllers.set(currentSessionId, abortController);
     try {
+        console.error('[Chat] Starting chat request for session:', currentSessionId);
         const { client, model } = await ensureInitialized();
+        console.error('[Chat] MCP client and LLM model initialized');
         const session = getOrCreateSession(currentSessionId);
         // Add user message to history
         session.push({ role: 'user', content: message });
         // Get tools from MCP
+        console.error('[Chat] Fetching tools from MCP...');
         const tools = await convertMcpToolsToAiTools(client);
+        console.error('[Chat] Got', Object.keys(tools).length, 'tools:', Object.keys(tools).join(', '));
         // Track usage
         let usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
         let fullText = '';
         // Use streamText for true streaming
+        console.error('[Chat] Starting streamText with', session.length, 'messages');
         const result = streamText({
             model,
             messages: session,
@@ -122,12 +127,16 @@ export async function handleChat(req, res) {
             },
         });
         // Stream text tokens as they arrive
+        console.error('[Chat] Starting to consume textStream...');
+        let tokenCount = 0;
         for await (const textPart of result.textStream) {
             if (textPart) {
+                tokenCount++;
                 fullText += textPart;
                 sendSSE(res, 'token', { content: textPart });
             }
         }
+        console.error('[Chat] Finished streaming, received', tokenCount, 'token chunks');
         // Get final usage stats (usage is a promise in streamText)
         const finalUsage = await result.usage;
         if (finalUsage) {

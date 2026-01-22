@@ -116,7 +116,15 @@ export class MCPClient {
       '@modelcontextprotocol/sdk/client/streamableHttp.js'
     );
 
-    const httpTransport = new StreamableHTTPClientTransport(new URL(options.url));
+    // Build headers including required mcp-protocol-version
+    const headers: Record<string, string> = {
+      'mcp-protocol-version': '2025-11-25',
+      ...options.headers,
+    };
+
+    const httpTransport = new StreamableHTTPClientTransport(new URL(options.url), {
+      requestInit: { headers },
+    });
     // Store as any to avoid type conflicts between different SDK transport types
     this.transport = httpTransport as Transport;
     await this.client.connect(this.transport);

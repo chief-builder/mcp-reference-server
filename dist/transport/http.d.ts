@@ -71,6 +71,7 @@ export declare class HttpTransport {
     private readonly statelessMode;
     private server;
     private messageHandler;
+    private readonly activeSockets;
     constructor(options: HttpTransportOptions);
     /**
      * Set the handler for processing incoming JSON-RPC messages
