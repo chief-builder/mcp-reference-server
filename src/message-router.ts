@@ -151,7 +151,7 @@ export class MessageRouter {
     // Validate protocol version
     if (initParams.protocolVersion !== PROTOCOL_VERSION) {
       throw new LifecycleError(
-        JsonRpcErrorCodes.INVALID_REQUEST,
+        JsonRpcErrorCodes.INVALID_PARAMS,
         `Unsupported protocol version: ${initParams.protocolVersion}. Expected: ${PROTOCOL_VERSION}`,
         { supported: PROTOCOL_VERSION, received: initParams.protocolVersion }
       );
