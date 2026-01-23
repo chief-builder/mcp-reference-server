@@ -72,27 +72,37 @@ describe('Error Handling E2E Tests', () => {
 
   describe('Parse Errors (-32700)', () => {
     // Note: Express's json middleware handles JSON parsing before our code.
-    // Invalid JSON triggers Express's error handler which returns HTML by default.
-    // The parseJsonRpc function handles already-parsed objects.
+    // Invalid JSON now returns proper JSON-RPC -32700 error via custom error handler.
 
-    it('should return error for invalid JSON body (Express handles before JSON-RPC layer)', async () => {
+    it('should return JSON-RPC parse error (-32700) for invalid JSON body', async () => {
       // Send malformed JSON - Express's json middleware will reject it
       const response = await sendRawRequest('{ invalid json }');
 
-      // Express returns 400 for invalid JSON (via body-parser error handler)
+      // Express returns 400 for invalid JSON
       expect(response.status).toBe(400);
 
-      // Response may be HTML (Express default) or custom error format
-      const text = await response.text();
-      // Just verify server responded with an error status
-      expect(text.length).toBeGreaterThan(0);
+      // Verify proper JSON-RPC error response
+      const result = await response.json();
+      expect(result.jsonrpc).toBe('2.0');
+      expect(result.error).toBeDefined();
+      expect(result.error.code).toBe(-32700);
+      expect(result.error.message).toBe('Parse error');
+      expect(result.id).toBeNull();
     });
 
-    it('should return error for truncated JSON', async () => {
+    it('should return JSON-RPC parse error (-32700) for truncated JSON', async () => {
       const response = await sendRawRequest('{"jsonrpc": "2.0", "method":');
 
       // Express returns 400 for invalid JSON
       expect(response.status).toBe(400);
+
+      // Verify proper JSON-RPC error response
+      const result = await response.json();
+      expect(result.jsonrpc).toBe('2.0');
+      expect(result.error).toBeDefined();
+      expect(result.error.code).toBe(-32700);
+      expect(result.error.message).toBe('Parse error');
+      expect(result.id).toBeNull();
     });
 
     it('should return invalid request error for empty body (parsed as null)', async () => {

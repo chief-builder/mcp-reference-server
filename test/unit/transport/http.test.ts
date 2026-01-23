@@ -497,6 +497,54 @@ describe('HttpTransport', () => {
 
         expect(response.status).toBe(413);
       });
+
+      it('should return JSON-RPC parse error (-32700) for invalid JSON body', async () => {
+        transport = createTestTransport({ allowedOrigins: ['*'] });
+        transport.setMessageHandler(async () => createSuccessResponse(1, { result: 'ok' }));
+        await transport.start();
+
+        const port = (transport as unknown as { port: number }).port;
+        const response = await fetch(`http://127.0.0.1:${port}/mcp`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'MCP-Protocol-Version': PROTOCOL_VERSION,
+          },
+          body: '{ invalid json }',
+        });
+
+        expect(response.status).toBe(400);
+        const body = await response.json();
+        expect(body.jsonrpc).toBe('2.0');
+        expect(body.error).toBeDefined();
+        expect(body.error.code).toBe(JsonRpcErrorCodes.PARSE_ERROR);
+        expect(body.error.message).toBe('Parse error');
+        expect(body.id).toBeNull();
+      });
+
+      it('should return JSON-RPC parse error (-32700) for truncated JSON', async () => {
+        transport = createTestTransport({ allowedOrigins: ['*'] });
+        transport.setMessageHandler(async () => createSuccessResponse(1, { result: 'ok' }));
+        await transport.start();
+
+        const port = (transport as unknown as { port: number }).port;
+        const response = await fetch(`http://127.0.0.1:${port}/mcp`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'MCP-Protocol-Version': PROTOCOL_VERSION,
+          },
+          body: '{"jsonrpc": "2.0", "method":',
+        });
+
+        expect(response.status).toBe(400);
+        const body = await response.json();
+        expect(body.jsonrpc).toBe('2.0');
+        expect(body.error).toBeDefined();
+        expect(body.error.code).toBe(JsonRpcErrorCodes.PARSE_ERROR);
+        expect(body.error.message).toBe('Parse error');
+        expect(body.id).toBeNull();
+      });
     });
 
     describe('session management', () => {

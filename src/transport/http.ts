@@ -262,12 +262,21 @@ export class HttpTransport {
     // Scoped to MCP endpoint only to avoid affecting other routes when user provides their own app
     this.app.use(MCP_ENDPOINT, express.json({ limit: '100kb' }));
 
-    // Handle body-parser errors (e.g., payload too large)
+    // Handle body-parser errors (e.g., payload too large, JSON parse errors)
     this.app.use(MCP_ENDPOINT, (err: Error & { type?: string }, _req: Request, res: Response, next: NextFunction) => {
       if (err.type === 'entity.too.large') {
         res.status(413).json({
           jsonrpc: '2.0',
           error: { code: -32600, message: 'Payload too large' },
+          id: null
+        });
+        return;
+      }
+      // Handle JSON parse errors from express.json() middleware
+      if (err.type === 'entity.parse.failed' || err instanceof SyntaxError) {
+        res.status(400).json({
+          jsonrpc: '2.0',
+          error: { code: JsonRpcErrorCodes.PARSE_ERROR, message: 'Parse error' },
           id: null
         });
         return;
