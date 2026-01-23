@@ -215,7 +215,7 @@ describe('Lifecycle Management', () => {
         } catch (e) {
           expect(e).toBeInstanceOf(LifecycleError);
           const error = e as LifecycleError;
-          expect(error.code).toBe(JsonRpcErrorCodes.INVALID_REQUEST);
+          expect(error.code).toBe(JsonRpcErrorCodes.INVALID_PARAMS);
           expect(error.message).toContain('Unsupported protocol version');
           expect(error.data).toEqual({
             supported: PROTOCOL_VERSION,
