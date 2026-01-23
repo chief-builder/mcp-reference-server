@@ -304,21 +304,31 @@ describe('HTTP Transport Integration', () => {
 
     it('should validate MCP-Protocol-Version header', async () => {
       server = await createTestServer();
-      server.transport.setMessageHandler(async () => null);
+      server.transport.setMessageHandler(async (msg) => {
+        const id = 'id' in msg ? msg.id : null;
+        return createSuccessResponse(id, {
+          protocolVersion: PROTOCOL_VERSION,
+          capabilities: {},
+          serverInfo: { name: 'test', version: '1.0.0' },
+        });
+      });
 
-      // Missing version header
+      // Missing version header - should default to legacy version 2025-03-26 per MCP spec
+      // This allows backwards compatibility with older SDK clients
       const response1 = await fetch(`${server.baseUrl}/mcp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(createRequest(1, 'test')),
+        body: JSON.stringify(createRequest(1, 'initialize', {
+          protocolVersion: PROTOCOL_VERSION,
+          capabilities: {},
+          clientInfo: { name: 'test-client', version: '1.0.0' },
+        })),
       });
-      expect(response1.status).toBe(400);
-      const body1 = await response1.json();
-      expect(body1.error).toContain('mcp-protocol-version');
+      expect(response1.status).toBe(200); // Should succeed with default legacy version
 
-      // Wrong version
+      // Wrong/unsupported version
       const response2 = await fetch(`${server.baseUrl}/mcp`, {
         method: 'POST',
         headers: {
@@ -330,6 +340,21 @@ describe('HTTP Transport Integration', () => {
       expect(response2.status).toBe(400);
       const body2 = await response2.json();
       expect(body2.error).toContain('Unsupported protocol version');
+
+      // Legacy version 2025-03-26 should also be accepted
+      const response3 = await fetch(`${server.baseUrl}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'MCP-Protocol-Version': '2025-03-26',
+        },
+        body: JSON.stringify(createRequest(2, 'initialize', {
+          protocolVersion: PROTOCOL_VERSION,
+          capabilities: {},
+          clientInfo: { name: 'test-client', version: '1.0.0' },
+        })),
+      });
+      expect(response3.status).toBe(200);
     });
 
     it('should validate MCP-Session-Id for non-initialize requests', async () => {

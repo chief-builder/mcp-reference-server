@@ -310,9 +310,19 @@ describe('HttpTransport', () => {
 
   describe('POST /mcp endpoint', () => {
     describe('header validation', () => {
-      it('should reject requests without MCP-Protocol-Version header', async () => {
+      it('should accept requests without MCP-Protocol-Version header (defaults to legacy version)', async () => {
+        // Per MCP spec: if header is missing, server SHOULD assume version 2025-03-26
         transport = createTestTransport();
-        transport.setMessageHandler(async () => null);
+        transport.setMessageHandler(async (msg, session) => {
+          return createSuccessResponse(
+            (msg as { id: number }).id,
+            {
+              protocolVersion: PROTOCOL_VERSION,
+              capabilities: {},
+              serverInfo: { name: 'test', version: '1.0.0' },
+            }
+          );
+        });
         await transport.start();
 
         const port = (transport as unknown as { port: number }).port;
@@ -321,15 +331,17 @@ describe('HttpTransport', () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(createRequest(1, 'test')),
+          body: JSON.stringify(createRequest(1, 'initialize', {
+            protocolVersion: PROTOCOL_VERSION,
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' },
+          })),
         });
 
-        expect(response.status).toBe(400);
-        const body = await response.json();
-        expect(body.error).toContain('mcp-protocol-version');
+        expect(response.status).toBe(200);
       });
 
-      it('should reject requests with wrong protocol version', async () => {
+      it('should reject requests with unsupported protocol version', async () => {
         transport = createTestTransport();
         transport.setMessageHandler(async () => null);
         await transport.start();
@@ -347,6 +359,37 @@ describe('HttpTransport', () => {
         expect(response.status).toBe(400);
         const body = await response.json();
         expect(body.error).toContain('Unsupported protocol version');
+      });
+
+      it('should accept requests with legacy protocol version 2025-03-26', async () => {
+        transport = createTestTransport();
+        transport.setMessageHandler(async (msg, session) => {
+          return createSuccessResponse(
+            (msg as { id: number }).id,
+            {
+              protocolVersion: PROTOCOL_VERSION,
+              capabilities: {},
+              serverInfo: { name: 'test', version: '1.0.0' },
+            }
+          );
+        });
+        await transport.start();
+
+        const port = (transport as unknown as { port: number }).port;
+        const response = await fetch(`http://127.0.0.1:${port}/mcp`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'MCP-Protocol-Version': '2025-03-26',
+          },
+          body: JSON.stringify(createRequest(1, 'initialize', {
+            protocolVersion: PROTOCOL_VERSION,
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' },
+          })),
+        });
+
+        expect(response.status).toBe(200);
       });
 
       it('should reject requests with wrong Content-Type', async () => {
@@ -1084,13 +1127,16 @@ describe('HttpTransport Stateless Mode', () => {
       expect(response.status).toBe(415);
     });
 
-    it('should still require MCP-Protocol-Version header', async () => {
+    it('should accept requests without MCP-Protocol-Version header (defaults to legacy)', async () => {
+      // Per MCP spec: if header is missing, server SHOULD assume version 2025-03-26
       transport = new HttpTransport({
         port: getTestPort(),
         statelessMode: true,
         allowedOrigins: ['*'],
       });
-      transport.setMessageHandler(async () => null);
+      transport.setMessageHandler(async (msg) => {
+        return createSuccessResponse((msg as { id: number }).id, { result: 'ok' });
+      });
       await transport.start();
 
       const port = (transport as unknown as { port: number }).port;
@@ -1102,9 +1148,7 @@ describe('HttpTransport Stateless Mode', () => {
         body: JSON.stringify(createRequest(1, 'test')),
       });
 
-      expect(response.status).toBe(400);
-      const body = await response.json();
-      expect(body.error).toContain('mcp-protocol-version');
+      expect(response.status).toBe(200);
     });
 
     it('should still validate Origin header', async () => {

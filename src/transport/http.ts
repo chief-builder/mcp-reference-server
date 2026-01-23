@@ -22,6 +22,10 @@ import {
   isNotification,
 } from '../protocol/jsonrpc.js';
 import { PROTOCOL_VERSION } from '../protocol/lifecycle.js';
+
+// Legacy protocol version for backwards compatibility (per MCP spec)
+// If server doesn't receive mcp-protocol-version header, it SHOULD assume this version
+const LEGACY_PROTOCOL_VERSION = '2025-03-26';
 import { SessionManager, Session } from './session.js';
 import { SSEManager } from './sse.js';
 import { createApiRouter } from '../api/router.js';
@@ -425,16 +429,14 @@ export class HttpTransport {
       }
 
       // Step 3: Validate MCP-Protocol-Version header
-      const protocolVersion = req.get(MCP_PROTOCOL_VERSION_HEADER);
-      if (!protocolVersion) {
+      // Per MCP spec: if header is missing, assume legacy version 2025-03-26 for backwards compatibility
+      // This allows SDK clients that don't send the header on initial requests to still connect
+      const protocolVersion = req.get(MCP_PROTOCOL_VERSION_HEADER) ?? LEGACY_PROTOCOL_VERSION;
+
+      // Validate that the version is one we support
+      if (protocolVersion !== PROTOCOL_VERSION && protocolVersion !== LEGACY_PROTOCOL_VERSION) {
         res.status(400).json({
-          error: `Missing required header: ${MCP_PROTOCOL_VERSION_HEADER}`,
-        });
-        return;
-      }
-      if (protocolVersion !== PROTOCOL_VERSION) {
-        res.status(400).json({
-          error: `Unsupported protocol version: ${protocolVersion}. Expected: ${PROTOCOL_VERSION}`,
+          error: `Unsupported protocol version: ${protocolVersion}. Supported versions: ${PROTOCOL_VERSION}, ${LEGACY_PROTOCOL_VERSION}`,
         });
         return;
       }

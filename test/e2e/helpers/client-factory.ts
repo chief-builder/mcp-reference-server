@@ -58,7 +58,8 @@ export async function createHttpClient(port: number, host: string = '127.0.0.1')
     '@modelcontextprotocol/sdk/client/streamableHttp.js'
   );
 
-  // Our server requires mcp-protocol-version header on all requests
+  // Per MCP spec, client SHOULD send mcp-protocol-version header on all requests
+  // Server defaults to legacy version 2025-03-26 if missing, but sending it is best practice
   const transport = new StreamableHTTPClientTransport(new URL(url), {
     requestInit: {
       headers: {
