@@ -2,7 +2,7 @@
  * Built-in Tool Registration
  *
  * Factory functions to register the built-in MCP tools with a ToolRegistry.
- * Includes: calculator, dice-roller, fortune-teller
+ * Includes: calculator, dice-roller, fortune-teller, slow-operation
  */
 import type { ToolRegistry } from './registry.js';
 import type { CompletionHandler } from '../completions/handler.js';
@@ -13,6 +13,7 @@ import type { CompletionHandler } from '../completions/handler.js';
  * - calculate: Basic arithmetic operations (add, subtract, multiply, divide)
  * - roll_dice: Dice rolling with standard notation (e.g., 2d6, 1d20+5)
  * - tell_fortune: Fortune generation by category and mood
+ * - slow_operation: Sleep for testing timeout behavior
  *
  * @param registry - The ToolRegistry to register tools with
  */

@@ -104,7 +104,7 @@ export class LifecycleManager {
         const initParams = parseResult.data;
         // Validate protocol version
         if (initParams.protocolVersion !== PROTOCOL_VERSION) {
-            throw new LifecycleError(JsonRpcErrorCodes.INVALID_REQUEST, `Unsupported protocol version: ${initParams.protocolVersion}. Expected: ${PROTOCOL_VERSION}`, { supported: PROTOCOL_VERSION, received: initParams.protocolVersion });
+            throw new LifecycleError(JsonRpcErrorCodes.INVALID_PARAMS, `Unsupported protocol version: ${initParams.protocolVersion}. Expected: ${PROTOCOL_VERSION}`, { supported: PROTOCOL_VERSION, received: initParams.protocolVersion });
         }
         // Store client info
         this.clientInfo = initParams.clientInfo;

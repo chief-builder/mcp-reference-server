@@ -12,6 +12,9 @@ import express from 'express';
 import { createServer } from 'node:http';
 import { parseJsonRpc, createErrorResponse, createJsonRpcError, JsonRpcErrorCodes, isNotification, } from '../protocol/jsonrpc.js';
 import { PROTOCOL_VERSION } from '../protocol/lifecycle.js';
+// Legacy protocol version for backwards compatibility (per MCP spec)
+// If server doesn't receive mcp-protocol-version header, it SHOULD assume this version
+const LEGACY_PROTOCOL_VERSION = '2025-03-26';
 import { SessionManager } from './session.js';
 import { SSEManager } from './sse.js';
 import { createApiRouter } from '../api/router.js';
@@ -159,12 +162,21 @@ export class HttpTransport {
         // Parse JSON bodies with size limit to prevent DoS attacks
         // Scoped to MCP endpoint only to avoid affecting other routes when user provides their own app
         this.app.use(MCP_ENDPOINT, express.json({ limit: '100kb' }));
-        // Handle body-parser errors (e.g., payload too large)
+        // Handle body-parser errors (e.g., payload too large, JSON parse errors)
         this.app.use(MCP_ENDPOINT, (err, _req, res, next) => {
             if (err.type === 'entity.too.large') {
                 res.status(413).json({
                     jsonrpc: '2.0',
                     error: { code: -32600, message: 'Payload too large' },
+                    id: null
+                });
+                return;
+            }
+            // Handle JSON parse errors from express.json() middleware
+            if (err.type === 'entity.parse.failed' || err instanceof SyntaxError) {
+                res.status(400).json({
+                    jsonrpc: '2.0',
+                    error: { code: JsonRpcErrorCodes.PARSE_ERROR, message: 'Parse error' },
                     id: null
                 });
                 return;
@@ -304,16 +316,13 @@ export class HttpTransport {
                 return;
             }
             // Step 3: Validate MCP-Protocol-Version header
-            const protocolVersion = req.get(MCP_PROTOCOL_VERSION_HEADER);
-            if (!protocolVersion) {
+            // Per MCP spec: if header is missing, assume legacy version 2025-03-26 for backwards compatibility
+            // This allows SDK clients that don't send the header on initial requests to still connect
+            const protocolVersion = req.get(MCP_PROTOCOL_VERSION_HEADER) ?? LEGACY_PROTOCOL_VERSION;
+            // Validate that the version is one we support
+            if (protocolVersion !== PROTOCOL_VERSION && protocolVersion !== LEGACY_PROTOCOL_VERSION) {
                 res.status(400).json({
-                    error: `Missing required header: ${MCP_PROTOCOL_VERSION_HEADER}`,
-                });
-                return;
-            }
-            if (protocolVersion !== PROTOCOL_VERSION) {
-                res.status(400).json({
-                    error: `Unsupported protocol version: ${protocolVersion}. Expected: ${PROTOCOL_VERSION}`,
+                    error: `Unsupported protocol version: ${protocolVersion}. Supported versions: ${PROTOCOL_VERSION}, ${LEGACY_PROTOCOL_VERSION}`,
                 });
                 return;
             }

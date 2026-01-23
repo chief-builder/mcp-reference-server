@@ -28,6 +28,12 @@ setInterval(() => {
 let mcpClient = null;
 let llmModel = null;
 let initPromise = null;
+async function initializeMcpClient() {
+    const client = new MCPClient({ verbose: false });
+    const mcpUrl = process.env.MCP_SERVER_URL || 'http://localhost:3000/mcp';
+    await client.connectHttp({ url: mcpUrl });
+    return client;
+}
 async function ensureInitialized() {
     if (mcpClient && llmModel) {
         return { client: mcpClient, model: llmModel };
@@ -37,13 +43,30 @@ async function ensureInitialized() {
             // Initialize LLM model
             llmModel = await createLLMProviderAsync();
             // Initialize MCP client - connect to same server's MCP endpoint
-            mcpClient = new MCPClient({ verbose: false });
-            const mcpUrl = process.env.MCP_SERVER_URL || 'http://localhost:3000/mcp';
-            await mcpClient.connectHttp({ url: mcpUrl });
+            mcpClient = await initializeMcpClient();
         })();
     }
     await initPromise;
     return { client: mcpClient, model: llmModel };
+}
+/**
+ * Reconnect the MCP client when the session becomes stale
+ */
+async function reconnectMcpClient() {
+    console.error('[Chat] Reconnecting MCP client due to stale session...');
+    // Disconnect existing client if any
+    if (mcpClient) {
+        try {
+            await mcpClient.disconnect();
+        }
+        catch {
+            // Ignore disconnect errors
+        }
+    }
+    // Create new client
+    mcpClient = await initializeMcpClient();
+    console.error('[Chat] MCP client reconnected successfully');
+    return mcpClient;
 }
 function getOrCreateSession(sessionId) {
     let session = sessions.get(sessionId);
@@ -84,14 +107,29 @@ export async function handleChat(req, res) {
     activeControllers.set(currentSessionId, abortController);
     try {
         console.error('[Chat] Starting chat request for session:', currentSessionId);
-        const { client, model } = await ensureInitialized();
+        let { client, model } = await ensureInitialized();
         console.error('[Chat] MCP client and LLM model initialized');
         const session = getOrCreateSession(currentSessionId);
         // Add user message to history
         session.push({ role: 'user', content: message });
-        // Get tools from MCP
+        // Get tools from MCP with retry on stale session
         console.error('[Chat] Fetching tools from MCP...');
-        const tools = await convertMcpToolsToAiTools(client);
+        let tools;
+        try {
+            tools = await convertMcpToolsToAiTools(client);
+        }
+        catch (toolsError) {
+            // Check if this is a stale session error (404 or session not found)
+            const errorMessage = toolsError instanceof Error ? toolsError.message : String(toolsError);
+            if (errorMessage.includes('Session not found') || errorMessage.includes('404')) {
+                console.error('[Chat] MCP session stale, reconnecting...');
+                client = await reconnectMcpClient();
+                tools = await convertMcpToolsToAiTools(client);
+            }
+            else {
+                throw toolsError;
+            }
+        }
         console.error('[Chat] Got', Object.keys(tools).length, 'tools:', Object.keys(tools).join(', '));
         // Track usage
         let usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
